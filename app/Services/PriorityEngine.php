@@ -55,6 +55,14 @@ class PriorityEngine
         | (spec.md 2.8).
         */
         foreach ($fallbacks as $fallback) {
+            // 🟢 ist die beste erreichbare Stufe für ein fehlendes Pokémon –
+            // besser wäre nur "besessen", und das ist oben schon abgehandelt.
+            // Weitersuchen kann das Ergebnis also nicht mehr verbessern, spart
+            // über den ganzen Dex aber ein paar tausend Auswertungen.
+            if ($ergebnis->level === PriorityLevel::Easy) {
+                break;
+            }
+
             if (! $fallback->isUsable()) {
                 continue;
             }
@@ -87,8 +95,13 @@ class PriorityEngine
         int $evolutionSteps = 0,
         string $prefix = '',
     ): PriorityResult {
-        $difficulty = $this->difficultyFrom($sources, $evolutionSteps);
-        $consoles = $this->consolesFrom($sources);
+        /*
+        | Schwierigkeit und Konsolenliste werden bewusst erst in dem Zweig
+        | berechnet, der sie zurückgibt: Die beiden häufigsten Fälle (🟢 und 🟡)
+        | rechnen ohnehin mit einer engeren Quellenmenge, und diese Methode läuft
+        | pro Form bis zu viermal – einmal für den eigenen Weg und einmal je
+        | Vorstufe. Vorab berechnet kostete das über den ganzen Dex spürbar Zeit.
+        */
 
         // 🟢 Einfach: Es gibt eine Quelle in einem Spiel, das der Nutzer besitzt.
         $ownedGameSources = $sources->filter(
@@ -163,15 +176,20 @@ class PriorityEngine
         }
 
         // Ab hier: keine Quelle in einem besessenen oder noch käuflichen Spiel.
-        $bankOnly = $sources->filter(fn (Obtainability $o) => (bool) $o->game->bank_only);
-        $directToHome = $sources->filter(
+        // Dieser Teil trifft nur eine Minderheit der Arten, deshalb erst hier
+        // die etwas teureren Auswertungen.
+        $difficulty = $this->difficultyFrom($sources, $evolutionSteps);
+        $consoles = $this->consolesFrom($sources);
+
+        $hatBankWeg = $sources->contains(fn (Obtainability $o) => (bool) $o->game->bank_only);
+        $hatDirektenWeg = $sources->contains(
             fn (Obtainability $o) => $o->game->home_compatible && ! $o->game->bank_only
         );
         $needsLegacy = $sources->contains(fn (Obtainability $o) => $o->game->isLegacyHardware());
 
         // 🔴 Dringend: Der einzige Weg nach HOME führt über Pokémon Bank.
         //    Ein GO-Weg entschärft das (spec.md 2.4) – dann bleibt es orange.
-        if ($bankOnly->isNotEmpty() && $directToHome->isEmpty()) {
+        if ($hatBankWeg && ! $hatDirektenWeg) {
             if ($this->goRescuable($go)) {
                 return new PriorityResult(
                     level: PriorityLevel::OldHardware,
