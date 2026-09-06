@@ -4,6 +4,7 @@ use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PokedexController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\TrainerCardController;
@@ -18,6 +19,9 @@ Route::view('/', 'welcome')->name('home');
 */
 Route::get('/pokedex', [PokedexController::class, 'index'])->name('pokedex.index');
 Route::get('/pokedex/{pokemon}', [PokedexController::class, 'show'])->name('pokedex.show');
+
+// Öffentliches Profil – nur erreichbar, wenn der Nutzer es freigegeben hat (spec.md 2.11)
+Route::get('/trainer/{user}', PublicProfileController::class)->name('trainer.public');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');

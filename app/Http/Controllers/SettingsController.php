@@ -47,6 +47,7 @@ class SettingsController extends Controller
             'music_enabled' => ['boolean'],
             'music_volume' => ['integer', 'min:0', 'max:100'],
             'reduce_motion' => ['boolean'],
+            'profile_public' => ['boolean'],
             'spiele' => ['array'],
             'spiele.*' => ['integer', Rule::exists('games', 'id')],
         ]);
@@ -67,6 +68,10 @@ class SettingsController extends Controller
             'music_volume' => $validated['music_volume'] ?? 35,
             'reduce_motion' => $request->boolean('reduce_motion'),
         ]);
+
+        // Die Freigabe hängt am Nutzer, nicht an den Einstellungen – sie
+        // entscheidet über die Sichtbarkeit einer öffentlichen Route.
+        $user->forceFill(['profile_public' => $request->boolean('profile_public')])->save();
 
         $user->games()->sync($validated['spiele'] ?? []);
 

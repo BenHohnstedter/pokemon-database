@@ -166,6 +166,33 @@
             </div>
         </section>
 
+        {{-- ── Öffentliches Profil (spec.md 2.11) ──────────────────────────── --}}
+        <section class="pixel-panel p-5">
+            <h2 class="font-pixel text-xs uppercase text-dex-accent">Profil teilen</h2>
+
+            <label class="mt-4 flex items-start gap-3 text-sm">
+                <input type="checkbox" name="profile_public" value="1"
+                       @checked(auth()->user()->profile_public)
+                       class="mt-0.5 border-2 border-dex-border bg-dex-bg text-dex-accent focus:ring-0">
+                <span>
+                    Öffentliches Profil freigeben
+                    <span class="block text-xs text-dex-muted">
+                        Macht Deinen Fortschritt unter einem festen Link sichtbar – ohne Login.
+                        Gezeigt werden nur Anzeigename, Fortschrittszahlen und Orden;
+                        keine E-Mail, keine Freundesliste, keine Einstellungen.
+                    </span>
+                </span>
+            </label>
+
+            @if (auth()->user()->profile_public)
+                <p class="mt-3 break-all text-xs">
+                    <span class="text-dex-muted">Dein Link:</span>
+                    <a href="{{ route('trainer.public', auth()->user()) }}"
+                       class="underline">{{ route('trainer.public', auth()->user()) }}</a>
+                </p>
+            @endif
+        </section>
+
         <button type="submit" dusk="einstellungen-speichern" class="pixel-button">Speichern</button>
     </form>
 </x-app-layout>
