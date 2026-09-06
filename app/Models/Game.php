@@ -15,7 +15,7 @@ class Game extends Model
 
     protected $fillable = [
         'slug', 'name_de', 'name_en', 'generation', 'platform', 'release_year',
-        'home_compatible', 'bank_only', 'still_purchasable', 'note', 'sort_order',
+        'home_compatible', 'bank_only', 'needs_transporter', 'still_purchasable', 'note', 'sort_order',
     ];
 
     protected function casts(): array
@@ -23,6 +23,7 @@ class Game extends Model
         return [
             'home_compatible' => 'boolean',
             'bank_only' => 'boolean',
+            'needs_transporter' => 'boolean',
             'still_purchasable' => 'boolean',
             'platform' => Platform::class,
         ];

@@ -22,7 +22,7 @@ class UserSetting extends Model
     protected $fillable = [
         'user_id', 'go_region',
         'count_regional_in_total', 'count_shiny_in_total',
-        'owns_3ds', 'owns_switch', 'theme', 'per_page',
+        'owns_3ds', 'owns_switch', 'has_poke_transporter', 'theme', 'per_page',
         'sound_effects_enabled', 'music_enabled', 'music_volume', 'reduce_motion',
     ];
 
@@ -30,6 +30,7 @@ class UserSetting extends Model
         'go_region' => 'europa',
         'count_regional_in_total' => false,
         'count_shiny_in_total' => false,
+        'has_poke_transporter' => true,
         'theme' => 'default',
         'per_page' => 60,
         'sound_effects_enabled' => true,
@@ -44,6 +45,7 @@ class UserSetting extends Model
             'count_shiny_in_total' => 'boolean',
             'owns_3ds' => 'boolean',
             'owns_switch' => 'boolean',
+            'has_poke_transporter' => 'boolean',
             'sound_effects_enabled' => 'boolean',
             'music_enabled' => 'boolean',
             'reduce_motion' => 'boolean',

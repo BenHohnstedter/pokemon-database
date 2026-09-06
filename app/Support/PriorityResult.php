@@ -30,6 +30,12 @@ final class PriorityResult
         public readonly bool $goRescuable = false,
         public readonly bool $obtainableAtAll = true,
         public readonly bool $bankDeadline = false,
+        /*
+         * Fangbar wäre es – nur käme es ohne die 3DS-App „Poké Transporter"
+         * nie bei Pokémon Bank und damit nie bei HOME an. Fürs UI, damit der
+         * Unterschied zu einem echten "Event vorbei" sichtbar bleibt.
+         */
+        public readonly bool $transporterMissing = false,
     ) {}
 
     /** Stufe 🔴: alte Hardware nötig UND nur über Bank erreichbar. */

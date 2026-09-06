@@ -43,8 +43,12 @@ class PriorityEngine
             );
         }
 
-        $sources = $this->usableSources($obtainabilities ?? $this->loadSources($form));
-        $ergebnis = $this->evaluateSources($sources, $context, $go);
+        $alle = $this->usableSources($obtainabilities ?? $this->loadSources($form));
+        $sources = $this->erreichbareSources($alle, $context);
+        $ergebnis = $this->evaluateSources(
+            $sources, $context, $go,
+            transporterFehlt: $sources->count() < $alle->count(),
+        );
 
         /*
         | Die Umwege über die Vorstufen werden IMMER mitgerechnet, nicht nur wenn
@@ -67,12 +71,16 @@ class PriorityEngine
                 continue;
             }
 
+            $alleDerVorstufe = $this->usableSources($fallback->sources);
+            $vorstufe = $this->erreichbareSources($alleDerVorstufe, $context);
+
             $ueberVorstufe = $this->evaluateSources(
-                $this->usableSources($fallback->sources),
+                $vorstufe,
                 $context,
                 $go,
                 evolutionSteps: $fallback->steps,
                 prefix: $fallback->label().' · ',
+                transporterFehlt: $vorstufe->count() < $alleDerVorstufe->count(),
             );
 
             if ($ueberVorstufe->level->hardship() < $ergebnis->level->hardship()) {
@@ -94,6 +102,7 @@ class PriorityEngine
         ?GoAvailability $go,
         int $evolutionSteps = 0,
         string $prefix = '',
+        bool $transporterFehlt = false,
     ): PriorityResult {
         /*
         | Schwierigkeit und Konsolenliste werden bewusst erst in dem Zweig
@@ -148,15 +157,30 @@ class PriorityEngine
         if ($sources->isEmpty()) {
             $inGo = $this->goAvailableAnywhere($go);
 
+            /*
+            | Sonderfall mit eigener Begründung: Fangen ginge, nur käme das
+            | Gefangene nie bei HOME an, weil ohne Poké Transporter der Weg zu
+            | Pokémon Bank fehlt. Für dieses Projekt zählt aber nur, was in HOME
+            | landet – deshalb dieselbe Stufe, aber ein ehrlicher Grund statt
+            | "Event vorbei".
+            */
+            $grund = match (true) {
+                $transporterFehlt && $inGo => 'Erreichbar nur in Spielen, die ohne Poké Transporter '
+                    .'nicht nach HOME kommen – in GO außerdem nur außerhalb Deiner Region.',
+                $transporterFehlt => 'Es gäbe Fangwege, aber alle führen über Pokémon Bank und damit '
+                    .'über Poké Transporter – die App hast Du laut Einstellungen nicht.',
+                $inGo => 'Kein regulärer Fangweg mehr – in GO nur außerhalb Deiner Region oder über Events.',
+                default => 'Event ist vorbei, kein regulärer Fangweg mehr – nur über Tauschbörsen/Community.',
+            };
+
             return new PriorityResult(
                 level: PriorityLevel::TradeOnly,
                 difficulty: Difficulty::SehrSchwer,
-                reason: $inGo
-                    ? 'Kein regulärer Fangweg mehr – in GO nur außerhalb Deiner Region oder über Events.'
-                    : 'Event ist vorbei, kein regulärer Fangweg mehr – nur über Tauschbörsen/Community.',
+                reason: $grund,
                 routes: $inGo ? [$this->goRouteLabel($go)] : [],
                 goRescuable: $this->goRescuable($go),
                 obtainableAtAll: $inGo,
+                transporterMissing: $transporterFehlt,
             );
         }
 
@@ -298,6 +322,30 @@ class PriorityEngine
     {
         return $obtainabilities
             ->filter(fn (Obtainability $o) => $o->isUsableSource() && $o->game !== null)
+            ->values();
+    }
+
+    /**
+     * Quellen, aus denen das Pokémon auch tatsächlich nach HOME kommt.
+     *
+     * Ohne die 3DS-App „Poké Transporter" endet der Weg aus Gen 1 bis 5 vor
+     * Pokémon Bank. Fangen ginge weiterhin – für dieses Projekt zählt aber nur,
+     * was in HOME ankommt, und deshalb fallen solche Quellen komplett heraus,
+     * statt als dringender Bank-Fall zu erscheinen. Das ist genau anders herum
+     * als beim Countdown: Wo der Weg ohnehin verschlossen ist, hilft auch keine
+     * Frist mehr.
+     *
+     * @param  Collection<int,Obtainability>  $sources
+     * @return Collection<int,Obtainability>
+     */
+    private function erreichbareSources(Collection $sources, PriorityContext $context): Collection
+    {
+        if ($context->hasTransporter) {
+            return $sources;
+        }
+
+        return $sources
+            ->reject(fn (Obtainability $o) => $o->game->needs_transporter)
             ->values();
     }
 

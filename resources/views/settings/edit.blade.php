@@ -110,6 +110,24 @@
                     Nintendo Switch vorhanden
                 </label>
             </div>
+
+            {{-- Eigene Zeile, weil daran ganze Generationen hängen (spec.md 2.7). --}}
+            <h3 class="mt-6 font-pixel text-[10px] uppercase text-dex-muted">Poké Transporter</h3>
+            <label class="mt-2 flex items-start gap-2 text-sm">
+                <input type="checkbox" name="has_poke_transporter" value="1"
+                       dusk="transporter-schalter"
+                       @checked($settings->has_poke_transporter)
+                       class="mt-1 border-2 border-dex-border bg-dex-bg text-dex-accent focus:ring-0">
+                <span>
+                    Ich habe die 3DS-App „Poké Transporter"
+                    <span class="mt-1 block text-xs text-dex-muted">
+                        Generation 1 bis 5 kommt nur über diese App zu Pokémon Bank – Gen 6 und 7
+                        laden direkt hoch. Ohne sie gibt es aus Rot/Blau, Gold/Silber, Rubin/Saphir,
+                        Diamant/Perl und Schwarz/Weiß gar keinen Weg nach HOME; die App führt sie
+                        dann nicht mehr als Bank-Frist, sondern als nicht erreichbar.
+                    </span>
+                </span>
+            </label>
         </section>
 
         {{-- ── Darstellung und Sound (spec.md 2.9, 5) ──────────────────────── --}}

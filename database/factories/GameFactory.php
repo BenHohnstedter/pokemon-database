@@ -46,7 +46,12 @@ class GameFactory extends Factory
         ]);
     }
 
-    /** Alter Titel, der nur über Pokémon Bank nach HOME kommt. */
+    /**
+     * Alter Titel, der nur über Pokémon Bank nach HOME kommt.
+     *
+     * Gen 6 lädt selbst zu Bank hoch – deshalb ohne Poké Transporter. Für die
+     * älteren Generationen gibt es dafür `needsTransporter()`.
+     */
     public function bankOnly(): static
     {
         return $this->state(fn () => [
@@ -55,6 +60,16 @@ class GameFactory extends Factory
             'home_compatible' => false,
             'bank_only' => true,
             'still_purchasable' => false,
+        ]);
+    }
+
+    /** Gen 1–5: der Weg zu Bank führt zusätzlich über Poké Transporter. */
+    public function needsTransporter(): static
+    {
+        return $this->bankOnly()->state(fn () => [
+            'platform' => Platform::NintendoDs,
+            'generation' => 5,
+            'needs_transporter' => true,
         ]);
     }
 

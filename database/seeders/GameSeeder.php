@@ -103,6 +103,25 @@ class GameSeeder extends Seeder
         ['go', 'Pokémon GO', 'Pokémon GO', 0, Platform::Mobile, 2016, true, false, true, 'Per GO-Transporter an HOME – hebt die Bank-Deadline auf'],
     ];
 
+    /**
+     * Titel, deren Weg nach Pokémon Bank zusätzlich über die 3DS-App
+     * „Poké Transporter" führt.
+     *
+     * Gen 6 und 7 laden selbst zu Bank hoch. Alles Ältere nicht: Gen 1 und 2
+     * aus der Virtual Console und Gen 5 gehen durch den Transporter, Gen 3 und
+     * 4 landen über Pal Park bzw. Poké-Transfer erst in Gen 5 und danach
+     * ebenfalls dort. Ohne die App gibt es aus diesen Spielen also überhaupt
+     * keinen Weg nach HOME — die Bank-Frist ist dann nicht das Problem,
+     * sondern schon die Stufe davor.
+     */
+    public const NEEDS_TRANSPORTER = [
+        'red', 'blue', 'yellow',
+        'gold', 'silver', 'crystal',
+        'ruby', 'sapphire', 'emerald', 'firered', 'leafgreen',
+        'diamond', 'pearl', 'platinum', 'heartgold', 'soulsilver',
+        'black', 'white', 'black-2', 'white-2',
+    ];
+
     public function run(): void
     {
         foreach (self::GAMES as $index => $game) {
@@ -111,6 +130,7 @@ class GameSeeder extends Seeder
             Game::updateOrCreate(
                 ['slug' => $slug],
                 [
+                    'needs_transporter' => in_array($slug, self::NEEDS_TRANSPORTER, true),
                     'name_de' => $nameDe,
                     'name_en' => $nameEn,
                     'generation' => $gen,

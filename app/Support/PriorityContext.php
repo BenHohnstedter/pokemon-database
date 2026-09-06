@@ -19,6 +19,12 @@ final class PriorityContext
         public readonly GoRegion $goRegion = GoRegion::Europa,
         public readonly bool $owns3ds = false,
         public readonly bool $ownsSwitch = false,
+        /*
+         * Ohne die 3DS-App „Poké Transporter" gibt es aus Gen 1–5 keinen Weg
+         * nach Pokémon Bank und damit keinen nach HOME. Standard ist true, weil
+         * das für die meisten zutrifft, die Bank überhaupt genutzt haben.
+         */
+        public readonly bool $hasTransporter = true,
     ) {}
 
     public static function forUser(User $user): self
@@ -30,6 +36,7 @@ final class PriorityContext
             goRegion: $settings->go_region ?? GoRegion::Europa,
             owns3ds: (bool) $settings->owns_3ds,
             ownsSwitch: (bool) $settings->owns_switch,
+            hasTransporter: (bool) $settings->has_poke_transporter,
         );
     }
 
