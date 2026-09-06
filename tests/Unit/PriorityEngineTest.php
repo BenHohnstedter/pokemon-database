@@ -1,0 +1,311 @@
+<?php
+
+/**
+ * Tests der Prioritäts-Engine (spec.md 2.7) – die Tabelle dort ist die
+ * Referenz, jeder Case hat hier mindestens einen Test.
+ */
+
+use App\Enums\Difficulty;
+use App\Enums\GoRegion;
+use App\Enums\PriorityLevel;
+use App\Models\GoAvailability;
+use App\Models\Obtainability;
+use App\Models\Pokemon;
+use App\Models\PokemonForm;
+use App\Services\PriorityEngine;
+use App\Support\EvolutionFallback;
+use App\Support\PriorityContext;
+use Database\Factories\GameFactory;
+
+beforeEach(function () {
+    resetDexSequence();
+    $this->engine = new PriorityEngine;
+});
+
+/** Baut ein Pokémon mit Basisform und liefert die Form zurück. */
+function form(array $attributes = []): PokemonForm
+{
+    return Pokemon::factory()->withBaseForm()->create($attributes)->baseForm;
+}
+
+/** Bezugsquellen einer Form, so wie die Engine sie erwartet (mit game-Relation). */
+function sources(PokemonForm $form): Illuminate\Support\Collection
+{
+    return Obtainability::query()
+        ->with('game')
+        ->where('pokemon_id', $form->pokemon_id)
+        ->get();
+}
+
+it('meldet Besessenes ohne weitere Prüfung als besessen', function () {
+    $form = form();
+
+    $result = $this->engine->evaluate($form, PriorityContext::guest(), owned: true);
+
+    expect($result)->toHavePriority(PriorityLevel::Owned)
+        ->and($result->reachableWithCurrentGames())->toBeTrue();
+});
+
+it('stuft ein Pokémon als einfach ein, wenn der Nutzer ein passendes Spiel besitzt', function () {
+    $form = form();
+    $game = GameFactory::new()->modern()->create();
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $game->id]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext(ownedGameIds: [$game->id]),
+        owned: false,
+        obtainabilities: sources($form),
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::Easy)
+        ->and($result->routes)->not->toBeEmpty()
+        ->and($result->reachableWithCurrentGames())->toBeTrue();
+});
+
+it('stuft ein Pokémon als kaufbar ein, wenn das Spiel noch im Handel ist', function () {
+    $form = form();
+    $game = GameFactory::new()->modern()->create();
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $game->id]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext(ownedGameIds: []),
+        owned: false,
+        obtainabilities: sources($form),
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::Purchasable)
+        ->and($result->reachableWithCurrentGames())->toBeFalse();
+});
+
+it('meldet Bank-Dringlichkeit, wenn der einzige Weg nach HOME über Pokémon Bank führt', function () {
+    $form = form();
+    $game = GameFactory::new()->bankOnly()->create();
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $game->id]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext(ownedGameIds: []),
+        owned: false,
+        obtainabilities: sources($form),
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::BankUrgent)
+        ->and($result->isUrgent())->toBeTrue()
+        ->and($result->consoles)->toContain('Nintendo 3DS');
+});
+
+it('entschärft die Bank-Deadline, wenn das Pokémon in GO farmbar ist', function () {
+    $form = form();
+    $game = GameFactory::new()->bankOnly()->create();
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $game->id]);
+    $go = GoAvailability::factory()->create(['pokemon_id' => $form->pokemon_id]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext(ownedGameIds: [], goRegion: GoRegion::Europa),
+        owned: false,
+        obtainabilities: sources($form),
+        go: $go,
+    );
+
+    // GO ist weltweit verfügbar, also greift schon die "einfach"-Regel.
+    expect($result)->toHavePriority(PriorityLevel::Easy)
+        ->and($result->goRescuable)->toBeTrue();
+});
+
+it('bleibt bei Bank-Dringlichkeit, wenn GO das Pokémon gar nicht führt', function () {
+    $form = form();
+    $game = GameFactory::new()->bankOnly()->create();
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $game->id]);
+    $go = GoAvailability::factory()->notAvailable()->create(['pokemon_id' => $form->pokemon_id]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext,
+        owned: false,
+        obtainabilities: sources($form),
+        go: $go,
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::BankUrgent);
+});
+
+it('stuft ein regional exklusives GO-Pokémon außerhalb der eigenen Region nicht als einfach ein', function () {
+    $form = form();
+    $game = GameFactory::new()->bankOnly()->create();
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $game->id]);
+    $go = GoAvailability::factory()
+        ->exclusiveTo([GoRegion::Ozeanien])
+        ->create(['pokemon_id' => $form->pokemon_id]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext(goRegion: GoRegion::Europa),
+        owned: false,
+        obtainabilities: sources($form),
+        go: $go,
+    );
+
+    // Tausch in GO bleibt möglich, deshalb keine harte Bank-Deadline …
+    expect($result)->toHavePriority(PriorityLevel::OldHardware)
+        ->and($result->goRescuable)->toBeTrue();
+});
+
+it('stuft dasselbe Pokémon als einfach ein, wenn der Nutzer in der richtigen Region wohnt', function () {
+    $form = form();
+    $game = GameFactory::new()->bankOnly()->create();
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $game->id]);
+    $go = GoAvailability::factory()
+        ->exclusiveTo([GoRegion::Ozeanien])
+        ->create(['pokemon_id' => $form->pokemon_id]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext(goRegion: GoRegion::Ozeanien),
+        owned: false,
+        obtainabilities: sources($form),
+        go: $go,
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::Easy);
+});
+
+it('behandelt ein Community-Day-Pokémon nicht als verlässlichen GO-Weg', function () {
+    $form = form();
+    $game = GameFactory::new()->bankOnly()->create();
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $game->id]);
+    $go = GoAvailability::factory()->communityDayOnly()->create(['pokemon_id' => $form->pokemon_id]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext,
+        owned: false,
+        obtainabilities: sources($form),
+        go: $go,
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::BankUrgent);
+});
+
+it('meldet ein abgelaufenes Event als nur noch per Tausch erreichbar', function () {
+    $form = form();
+    $game = GameFactory::new()->bankOnly()->create();
+    Obtainability::factory()->expiredEvent()->create([
+        'pokemon_id' => $form->pokemon_id,
+        'game_id' => $game->id,
+    ]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext,
+        owned: false,
+        obtainabilities: sources($form),
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::TradeOnly)
+        ->and($result->difficulty)->toBe(Difficulty::SehrSchwer)
+        ->and($result->obtainableAtAll)->toBeFalse();
+});
+
+it('zählt reine Transfer-Einträge nicht als Bezugsquelle', function () {
+    $form = form();
+    $game = GameFactory::new()->modern()->create();
+    Obtainability::factory()->transferOnly()->create([
+        'pokemon_id' => $form->pokemon_id,
+        'game_id' => $game->id,
+    ]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext(ownedGameIds: [$game->id]),
+        owned: false,
+        obtainabilities: sources($form),
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::TradeOnly);
+});
+
+it('erbt den Weg der fangbaren Vorstufe, wenn die Stufe nur per Entwicklung erreichbar ist', function () {
+    $basis = Pokemon::factory()->withBaseForm()->create();
+    $game = GameFactory::new()->modern()->create();
+    Obtainability::factory()->create(['pokemon_id' => $basis->id, 'game_id' => $game->id]);
+
+    $entwicklung = Pokemon::factory()->withBaseForm()->evolutionOnly($basis)->create();
+
+    $result = $this->engine->evaluate(
+        $entwicklung->baseForm,
+        new PriorityContext(ownedGameIds: [$game->id]),
+        owned: false,
+        obtainabilities: collect(),
+        fallback: new EvolutionFallback(
+            $basis->name_de,
+            Obtainability::with('game')->where('pokemon_id', $basis->id)->get(),
+        ),
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::Easy)
+        // Erst fangen, dann entwickeln – eine Stufe schwerer als der reine Fang.
+        ->and($result->difficulty)->toBe(Difficulty::Mittel)
+        ->and($result->routes[0])->toContain('über Entwicklung aus '.$basis->name_de);
+});
+
+it('meldet eine Stufe ohne jede Quelle und ohne fangbare Vorstufe als Tauschfall', function () {
+    $form = form();
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext,
+        owned: false,
+        obtainabilities: collect(),
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::TradeOnly)
+        ->and($result->obtainableAtAll)->toBeFalse();
+});
+
+it('bevorzugt den einfachsten Weg, wenn mehrere Quellen existieren', function () {
+    $form = form();
+    $besessen = GameFactory::new()->bankOnly()->create();
+    $modern = GameFactory::new()->modern()->create();
+
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $besessen->id]);
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $modern->id]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext(ownedGameIds: []),
+        owned: false,
+        obtainabilities: sources($form),
+    );
+
+    // Das kaufbare Spiel gewinnt gegen die Bank-Route.
+    expect($result)->toHavePriority(PriorityLevel::Purchasable);
+});
+
+it('meldet alte Hardware ohne Bank-Zwang als orange statt rot', function () {
+    $form = form();
+    $game = GameFactory::new()->legacyWithoutBank()->create();
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $game->id]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext,
+        owned: false,
+        obtainabilities: sources($form),
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::OldHardware)
+        ->and($result->isUrgent())->toBeFalse();
+});
+
+it('sortiert die Stufen nach Dringlichkeit', function () {
+    $sorted = array_map(
+        fn (PriorityLevel $l) => $l->value,
+        PriorityLevel::byUrgencyDesc(),
+    );
+
+    expect($sorted[0])->toBe(PriorityLevel::BankUrgent->value)
+        ->and(end($sorted))->toBe(PriorityLevel::Owned->value);
+});

@@ -19,6 +19,12 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!--
+            Ohne diese Zeile erbt der Test-Client die APP_URL aus der .env, die
+            unter XAMPP den Unterpfad /pokemon-database/public enthält – dann
+            landet $this->get('/') auf einer 404 statt auf der Startroute.
+        -->
+        <env name="APP_URL" value="http://localhost"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
