@@ -116,7 +116,10 @@ class ImportPokedexCommand extends Command
     /** Wie weit reicht der nationale Dex aktuell? */
     private function resolveUpperBound(PokeApiClient $api): int
     {
-        if ($to = $this->option('to')) {
+        // Bewusst gegen null geprüft und nicht auf Wahrheitswert: "--to=0" ist
+        // eine gültige Angabe, wäre als String aber falsy und würde die API
+        // unnötig nach der Gesamtzahl fragen.
+        if (($to = $this->option('to')) !== null) {
             return (int) $to;
         }
 

@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use Throwable;
 
 /**
  * Dünner HTTP-Client für die PokéAPI (spec.md 4).
@@ -38,6 +41,11 @@ class PokeApiClient
             ->retry(
                 config('pokedex.pokeapi.retries', 3),
                 config('pokedex.pokeapi.retry_delay_ms', 500),
+                // Nur Verbindungsfehler und 5xx wiederholen. Ein 404 heißt, dass
+                // es die Ressource nicht gibt – dreimal nachzufragen kostet beim
+                // Vollimport spürbar Zeit und ändert nichts.
+                when: fn (Throwable $e) => $e instanceof ConnectionException
+                    || ($e instanceof RequestException && $e->response->serverError()),
                 throw: false,
             )
             ->acceptJson()
@@ -137,6 +145,10 @@ class PokeApiClient
 
     private function readCache(string $url): ?array
     {
+        if (! config('pokedex.pokeapi.cache_enabled', true)) {
+            return null;
+        }
+
         $path = $this->cachePath($url);
 
         if (! is_file($path)) {
@@ -156,6 +168,10 @@ class PokeApiClient
 
     private function writeCache(string $url, array $data): void
     {
+        if (! config('pokedex.pokeapi.cache_enabled', true)) {
+            return;
+        }
+
         $dir = $this->cacheDirectory();
 
         if (! is_dir($dir) && ! @mkdir($dir, 0775, true) && ! is_dir($dir)) {

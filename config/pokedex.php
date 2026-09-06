@@ -26,6 +26,7 @@ return [
         'retry_delay_ms' => (int) env('POKEAPI_RETRY_DELAY', 500),
         // Antworten werden auf Platte gecacht, damit ein erneuter Import nicht
         // wieder tausende Requests auslöst (spec.md 4).
+        'cache_enabled' => (bool) env('POKEAPI_CACHE', true),
         'cache_dir' => storage_path('app/pokeapi-cache'),
         'cache_ttl_days' => (int) env('POKEAPI_CACHE_TTL_DAYS', 30),
     ],
