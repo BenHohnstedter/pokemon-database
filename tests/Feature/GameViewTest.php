@@ -177,3 +177,43 @@ it('meldet ein leeres Spiel als abgeschlossen', function () {
         ->assertOk()
         ->assertSee('Hier fehlt Dir nichts mehr');
 });
+
+it('unterscheidet "alles gefangen" von "keine Fundorte hinterlegt"', function () {
+    // Pokémon GO und einige Altspiele haben keine Obtainability-Zeilen. Beides
+    // käme als 0 an – die Übersicht darf dafür keinen Vollzug melden.
+    $leer = GameFactory::new()->create(['name_de' => 'Pokémon GO']);
+    $fertig = GameFactory::new()->create(['name_de' => 'Schwert']);
+
+    $pokemon = Pokemon::factory()->withBaseForm()->create();
+    Obtainability::factory()->create(['pokemon_id' => $pokemon->id, 'game_id' => $fertig->id]);
+    UserPokemonForm::create([
+        'user_id' => $this->user->id,
+        'pokemon_form_id' => $pokemon->baseForm->id,
+        'owned' => true,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('games.index'))
+        ->assertOk()
+        ->assertSee('Keine Fundorte hinterlegt')
+        ->assertSee('Hier fehlt Dir nichts mehr');
+
+    $this->actingAs($this->user)
+        ->get(route('games.show', $leer))
+        ->assertOk()
+        ->assertSee('Für dieses Spiel sind keine Fundorte hinterlegt.')
+        ->assertDontSee('Hier fehlt Dir nichts mehr');
+});
+
+it('nennt bei offenen Arten auch den Gesamtbestand des Spiels', function () {
+    $game = GameFactory::new()->create(['name_de' => 'Schwert']);
+
+    foreach (Pokemon::factory()->withBaseForm()->count(3)->create() as $pokemon) {
+        Obtainability::factory()->create(['pokemon_id' => $pokemon->id, 'game_id' => $game->id]);
+    }
+
+    $this->actingAs($this->user)
+        ->get(route('games.index'))
+        ->assertOk()
+        ->assertSee('von 3 hinterlegten');
+});

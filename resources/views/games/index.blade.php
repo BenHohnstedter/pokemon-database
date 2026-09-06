@@ -19,6 +19,7 @@
                 @foreach ($titel as $spiel)
                     @php
                         $offen = $offeneJeSpiel[$spiel->id] ?? 0;
+                        $gesamt = $gesamtJeSpiel[$spiel->id] ?? 0;
                         $besitzt = in_array($spiel->id, $besesseneSpiele, true);
                     @endphp
 
@@ -47,8 +48,13 @@
                                 <span class="text-dex-muted">
                                     {{ $offen === 1 ? 'Pokémon fehlt Dir noch' : 'Pokémon fehlen Dir noch' }}
                                 </span>
-                            @else
+                                <span class="block text-[10px] text-dex-muted">von {{ $gesamt }} hinterlegten</span>
+                            @elseif ($gesamt > 0)
                                 <span class="text-dex-success">Hier fehlt Dir nichts mehr 🎉</span>
+                            @else
+                                {{-- Sonst stünde bei Pokémon GO und Grün "nichts mehr offen",
+                                     obwohl schlicht keine Fundorte hinterlegt sind. --}}
+                                <span class="text-dex-muted">Keine Fundorte hinterlegt</span>
                             @endif
                         </p>
 

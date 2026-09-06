@@ -61,9 +61,15 @@
 
     @if ($zeilen->isEmpty())
         <div class="pixel-panel p-8 text-center">
-            <p class="font-pixel text-xs text-dex-success">
-                {{ $nurOffene ? 'Hier fehlt Dir nichts mehr. 🎉' : 'Für dieses Spiel sind keine Fundorte hinterlegt.' }}
-            </p>
+            @if ($gesamtImSpiel === 0)
+                {{-- Nicht mit "nichts mehr offen" verwechseln: für Pokémon GO und
+                     einige Altspiele sind schlicht keine Fundorte hinterlegt. --}}
+                <p class="font-pixel text-xs text-dex-muted">
+                    Für dieses Spiel sind keine Fundorte hinterlegt.
+                </p>
+            @else
+                <p class="font-pixel text-xs text-dex-success">Hier fehlt Dir nichts mehr. 🎉</p>
+            @endif
         </div>
     @else
         <div class="pixel-panel pixel-scroll-x p-4">

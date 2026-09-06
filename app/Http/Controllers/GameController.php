@@ -25,12 +25,16 @@ class GameController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
-        $offeneJeSpiel = $this->offeneJeSpiel($user);
 
         return view('games.index', [
             'spiele' => Game::ordered()->get()->groupBy('generation'),
             'besesseneSpiele' => $user->games()->pluck('games.id')->all(),
-            'offeneJeSpiel' => $offeneJeSpiel,
+            'offeneJeSpiel' => $this->offeneJeSpiel($user),
+            // Ohne diese Zahl ließen sich "alles gefangen" und "für diesen
+            // Titel sind gar keine Fundorte hinterlegt" nicht unterscheiden –
+            // beides käme als 0 an, und die Übersicht würde für Pokémon GO
+            // oder Grün fälschlich Vollzug melden.
+            'gesamtJeSpiel' => $this->gesamtJeSpiel(),
         ]);
     }
 
@@ -113,6 +117,20 @@ class GameController extends Controller
             })
             ->groupBy('game_id')
             ->pluck('offen', 'game_id')
+            ->all();
+    }
+
+    /**
+     * Wie viele Arten sind je Spiel überhaupt hinterlegt?
+     *
+     * @return array<int,int>
+     */
+    private function gesamtJeSpiel(): array
+    {
+        return Obtainability::query()
+            ->selectRaw('game_id, count(distinct pokemon_id) as gesamt')
+            ->groupBy('game_id')
+            ->pluck('gesamt', 'game_id')
             ->all();
     }
 }
