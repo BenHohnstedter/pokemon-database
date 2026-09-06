@@ -27,7 +27,7 @@
     </x-slot>
 
     <div class="grid gap-6 lg:grid-cols-3">
-        <div class="pixel-panel overflow-x-auto p-5 lg:col-span-2">
+        <div class="pixel-panel pixel-scroll-x p-5 lg:col-span-2">
             <table class="w-full min-w-[30rem] text-left text-sm">
                 <thead class="border-b-2 border-dex-border text-[10px] uppercase text-dex-muted">
                     <tr>

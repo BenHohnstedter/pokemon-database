@@ -9,6 +9,7 @@
  * überstehen, damit die Ursache sofort sichtbar ist.
  */
 
+use App\Models\Obtainability;
 use App\Models\Pokemon;
 use App\Models\PokemonForm;
 use App\Models\User;
@@ -36,20 +37,57 @@ const SEITEN = [
     'Masseneingabe' => '/sammlung/masseneingabe',
     'Sichern' => '/sammlung/uebertragen',
     'Einstellungen' => '/einstellungen',
+    'Spiele' => '/spiele',
+    // Die Tabellen auf diesen beiden Seiten sind die breitesten der App und
+    // damit die wahrscheinlichsten Überläufer. Die IDs stimmen, weil
+    // DatabaseTruncation die Auto-Increment-Zähler zurücksetzt.
+    'Spiel-Detail' => '/spiele/1',
+    'Pokémon-Detail' => '/pokedex/1',
 ];
 
-/** Liefert die Elemente, die über den rechten Rand ragen – für die Fehlermeldung. */
-function ueberstehendeElemente(Browser $browser): string
+/**
+ * Prüft, ob die Seite tatsächlich seitlich verschiebbar ist – und nennt die
+ * Schuldigen.
+ *
+ * Absichtlich nicht über `documentElement.scrollWidth`: sobald eine Seite eine
+ * breite Tabelle in einem `overflow-x-auto`-Container zeigt (Bezugsquellen,
+ * Spielansicht), meldet Chrome dort die ungekürzte Inhaltsbreite, obwohl der
+ * Container sauber clippt und sich nichts schieben lässt. Der Test hätte also
+ * genau das angemeckert, was die richtige Lösung ist.
+ *
+ * Gemessen wird stattdessen das, was der Nutzer merkt: Lässt sich das Dokument
+ * nach rechts scrollen? Und dazu die Elemente, die über den Rand ragen, ohne
+ * dass ein Vorfahre sie clippt.
+ *
+ * @return array{0:int,1:string} verschiebbare Pixel, überstehende Elemente
+ */
+function horizontalerUeberlauf(Browser $browser): array
 {
-    $treffer = $browser->script(<<<'JS'
+    return $browser->script(<<<'JS'
         const de = document.documentElement;
-        return [...document.querySelectorAll('body *')]
-            .filter(e => e.getBoundingClientRect().right > de.clientWidth + 1)
+        const vorher = window.scrollX;
+        window.scrollTo(9999, window.scrollY);
+        const schiebbar = Math.round(window.scrollX);
+        window.scrollTo(vorher, window.scrollY);
+
+        // Ein Vorfahre mit eigenem Scrollbereich schneidet das Kind ab – das
+        // ist gewollt und kein Layoutfehler.
+        const geclippt = (el) => {
+            for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+                if (['auto', 'hidden', 'scroll'].includes(getComputedStyle(p).overflowX)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        const schuldige = [...document.querySelectorAll('body *')]
+            .filter(e => e.getBoundingClientRect().right > de.clientWidth + 1 && !geclippt(e))
             .slice(0, 5)
             .map(e => e.tagName.toLowerCase() + '.' + e.className.toString().slice(0, 50));
-    JS)[0];
 
-    return $treffer === [] ? '(keine gefunden)' : implode(' | ', $treffer);
+        return [schiebbar, schuldige.join(' | ') || '(keine gefunden)'];
+    JS)[0];
 }
 
 it('läuft auf keiner Seite und keiner Breite horizontal über', function () {
@@ -60,6 +98,16 @@ it('läuft auf keiner Seite und keiner Breite horizontal über', function () {
 
     $user = User::factory()->create(['name' => 'Responsive-Tester']);
     $user->settingsOrDefault();
+
+    // Ohne Fundorte blieben Spiel- und Detailseite leer und der Test würde
+    // genau die Tabellen nicht prüfen, wegen derer er sie besucht.
+    foreach (Pokemon::limit(40)->pluck('id') as $pokemonId) {
+        Obtainability::factory()->create([
+            'pokemon_id' => $pokemonId,
+            'game_id' => 1,
+            'location_detail' => 'Route 1 mit einem betont langen Fundortnamen',
+        ]);
+    }
 
     // Etwas Bestand, damit Fortschrittsbalken und Karten echte Inhalte haben.
     foreach (PokemonForm::base()->limit(25)->pluck('id') as $formId) {
@@ -80,15 +128,12 @@ it('läuft auf keiner Seite und keiner Breite horizontal über', function () {
             foreach (SEITEN as $name => $pfad) {
                 $browser->visit($pfad)->pause(250);
 
-                [$scrollWidth, $clientWidth] = $browser->script(
-                    'return [document.documentElement.scrollWidth, document.documentElement.clientWidth];'
-                )[0];
+                [$schiebbar, $schuldige] = horizontalerUeberlauf($browser);
 
-                expect($scrollWidth)->toBeLessThanOrEqual(
-                    $clientWidth,
-                    "{$name} läuft bei {$geraet} ({$breite}px) über: "
-                    ."scrollWidth {$scrollWidth} > clientWidth {$clientWidth}. "
-                    .'Überstehend: '.ueberstehendeElemente($browser)
+                expect($schiebbar)->toBe(
+                    0,
+                    "{$name} lässt sich bei {$geraet} ({$breite}px) um {$schiebbar}px "
+                    ."seitlich schieben. Überstehend: {$schuldige}"
                 );
             }
         }

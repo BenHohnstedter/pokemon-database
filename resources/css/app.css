@@ -114,6 +114,23 @@
         border: 2px solid rgb(var(--dex-border) / 0.6);
     }
 
+    /*
+    | Waagerecht scrollender Bereich für breite Tabellen (Bezugsquellen,
+    | Spielansicht).
+    |
+    | `contain: layout` ist hier kein Beiwerk: Chrome rechnet die Mindestbreite
+    | des Inhalts – bei uns `min-w-[36rem]` auf der Tabelle – bis zur Wurzel
+    | hoch, obwohl `overflow-x: auto` sie längst abschneidet. Ergebnis: die
+    | ganze Seite ließ sich auf dem Handy um ~55px seitlich schieben. Weder
+    | `max-width: 100%` noch `overflow-x: clip` auf Panel, `main`, `body` oder
+    | `html` halten das auf – erst die Layout-Abschottung tut es. Der
+    | Responsive-Test in tests/Browser/ResponsiveTest.php deckt genau das ab.
+    */
+    .pixel-scroll-x {
+        overflow-x: auto;
+        contain: layout;
+    }
+
     .pixel-button {
         @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-pixel uppercase transition-transform;
         background-color: rgb(var(--dex-accent));
