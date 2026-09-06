@@ -310,3 +310,79 @@ it('sortiert die Stufen nach Dringlichkeit', function () {
     expect($sorted[0])->toBe(PriorityLevel::BankUrgent->value)
         ->and(end($sorted))->toBe(PriorityLevel::Owned->value);
 });
+
+it('zieht den Umweg über die Vorstufe auch dann heran, wenn die Stufe eine eigene Quelle hat', function () {
+    // Bisaknosp-Fall: wild nur in einem Bank-Spiel, aber aus einem Bisasam
+    // eines noch käuflichen Spiels entwickelbar.
+    $basis = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Bisasam']);
+    $kaufbar = GameFactory::new()->modern()->create();
+    Obtainability::factory()->create(['pokemon_id' => $basis->id, 'game_id' => $kaufbar->id]);
+
+    $mitte = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Bisaknosp']);
+    Obtainability::factory()->create([
+        'pokemon_id' => $mitte->id,
+        'game_id' => GameFactory::new()->bankOnly()->create()->id,
+    ]);
+
+    $result = $this->engine->evaluate(
+        $mitte->baseForm,
+        new PriorityContext(ownedGameIds: []),
+        owned: false,
+        obtainabilities: sources($mitte->baseForm),
+        fallback: new EvolutionFallback(
+            $basis->name_de,
+            Obtainability::with('game')->where('pokemon_id', $basis->id)->get(),
+        ),
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::Purchasable)
+        ->and($result->isUrgent())->toBeFalse()
+        ->and($result->routes[0])->toContain('über Entwicklung aus Bisasam');
+});
+
+it('behält den eigenen Weg, wenn er günstiger ist als der über die Vorstufe', function () {
+    $basis = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Vorstufe']);
+    Obtainability::factory()->create([
+        'pokemon_id' => $basis->id,
+        'game_id' => GameFactory::new()->bankOnly()->create()->id,
+    ]);
+
+    $stufe = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Endstufe']);
+    $meins = GameFactory::new()->modern()->create();
+    Obtainability::factory()->create(['pokemon_id' => $stufe->id, 'game_id' => $meins->id]);
+
+    $result = $this->engine->evaluate(
+        $stufe->baseForm,
+        new PriorityContext(ownedGameIds: [$meins->id]),
+        owned: false,
+        obtainabilities: sources($stufe->baseForm),
+        fallback: new EvolutionFallback(
+            $basis->name_de,
+            Obtainability::with('game')->where('pokemon_id', $basis->id)->get(),
+        ),
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::Easy)
+        ->and($result->routes[0])->not->toContain('über Entwicklung');
+});
+
+it('lässt die Schwierigkeit nie unter den Wert am Pokémon fallen', function () {
+    // Mew-Fall: formal ein Wildfang, in Wahrheit ein abgelaufenes Event.
+    $pokemon = Pokemon::factory()->withBaseForm()->mythical()->create([
+        'difficulty' => Difficulty::SehrSchwer,
+    ]);
+    Obtainability::factory()->create([
+        'pokemon_id' => $pokemon->id,
+        'game_id' => GameFactory::new()->modern()->create()->id,
+    ]);
+
+    $result = $this->engine->evaluate(
+        $pokemon->baseForm,
+        new PriorityContext,
+        owned: false,
+        obtainabilities: sources($pokemon->baseForm),
+    );
+
+    expect($result->difficulty)->toBe(Difficulty::SehrSchwer)
+        ->and($result)->toHavePriority(PriorityLevel::Purchasable);
+});

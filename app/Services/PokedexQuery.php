@@ -47,7 +47,11 @@ class PokedexQuery
         $this->primeLookups();
 
         return PokemonForm::query()
-            ->with(['pokemon.types', 'pokemon.sourcePokemon:id,name_de,evolution_summary_de'])
+            ->with([
+                'pokemon.types',
+                'pokemon.evolvesFrom:id,name_de,source_pokemon_id',
+                'pokemon.evolvesFrom.sourcePokemon:id,name_de',
+            ])
             ->whereIn('form_type', array_map(fn (FormType $t) => $t->value, $formTypes))
             ->join('pokemon', 'pokemon.id', '=', 'pokemon_forms.pokemon_id')
             ->orderBy('pokemon.dex_nr')
@@ -110,6 +114,9 @@ class PokedexQuery
     /** Bezugsquellen einer Art, inklusive verdrahteter game-Relation. */
     public function sourcesFor(int $pokemonId): Collection
     {
+        // Auch als Einstiegspunkt aufrufbar (Detailseite), deshalb hier absichern.
+        $this->primeLookups();
+
         return $this->sourcesByPokemon[$pokemonId] ?? collect();
     }
 
@@ -119,27 +126,34 @@ class PokedexQuery
     }
 
     /**
-     * Nur per Entwicklung erreichbar? Dann zählt der Weg der Vorstufe,
-     * die `pokedex:recalculate` bereits aufgelöst hat.
+     * Der Weg über die Vorstufe, sofern es eine gibt.
+     *
+     * Wird für JEDE Stufe mit Vorstufe geliefert, nicht nur für die, die selbst
+     * keine Quelle hat – die Engine vergleicht beide Wege und nimmt den
+     * günstigeren (spec.md 2.8). `pokedex:recalculate` hat in
+     * `source_pokemon_id` schon die nächste fangbare Stufe aufgelöst, deshalb
+     * reicht hier ein Blick auf die direkte Vorstufe.
      */
     private function fallbackFor(PokemonForm $form): ?EvolutionFallback
     {
-        $pokemon = $form->pokemon;
+        $vorstufe = $form->pokemon?->evolvesFrom;
 
-        if ($pokemon === null || ! $pokemon->onlyViaEvolution()) {
+        if ($vorstufe?->source_pokemon_id === null) {
             return null;
         }
 
-        $source = $pokemon->sourcePokemon;
+        $quelle = $vorstufe->source_pokemon_id === $vorstufe->id
+            ? $vorstufe
+            : $vorstufe->sourcePokemon;
 
-        if ($source === null) {
+        if ($quelle === null) {
             return null;
         }
 
         return new EvolutionFallback(
-            $source->name_de,
-            $this->sourcesFor($source->id),
-            $pokemon->evolution_summary_de,
+            $quelle->name_de,
+            $this->sourcesFor($quelle->id),
+            $form->pokemon->evolution_summary_de,
         );
     }
 

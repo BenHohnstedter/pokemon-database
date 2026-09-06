@@ -23,9 +23,8 @@
             <p class="font-dex text-3xl {{ $betroffen > 0 ? 'text-dex-danger' : 'text-dex-success' }}">
                 {{ $betroffen }}
             </p>
-            <p class="text-xs text-dex-muted">
-                {{ $betroffen === 1 ? 'Pokémon betroffen' : 'Pokémon betroffen' }}
-            </p>
+            {{-- "Pokémon" ist im Deutschen unveränderlich, deshalb keine Pluralform. --}}
+            <p class="text-xs text-dex-muted">Pokémon betroffen</p>
         </div>
     </div>
 

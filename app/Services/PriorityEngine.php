@@ -25,8 +25,7 @@ class PriorityEngine
     /**
      * @param  Collection<int,Obtainability>|null  $obtainabilities  Bezugsquellen der Form,
      *                                                               mit geladener game-Relation
-     * @param  EvolutionFallback|null  $fallback  Weg der nächsten fangbaren Vorstufe,
-     *                                            falls die Form selbst keinen hat
+     * @param  EvolutionFallback|null  $fallback  Weg der nächsten fangbaren Vorstufe
      */
     public function evaluate(
         PokemonForm $form,
@@ -45,19 +44,46 @@ class PriorityEngine
         }
 
         $sources = $this->usableSources($obtainabilities ?? $this->loadSources($form));
+        $ergebnis = $this->evaluateSources($sources, $context, $go);
 
-        // Nur per Entwicklung erreichbar: Der Weg der Vorstufe ist der Weg
-        // dieser Stufe, nur einen Schritt aufwendiger (spec.md 2.8).
-        $viaEvolution = false;
+        /*
+        | Der Umweg über die Vorstufe wird IMMER mitgerechnet, nicht nur wenn die
+        | Stufe selbst gar keine Quelle hat: Bisaknosp ist wild nur in X zu finden
+        | (3DS, also Bank-Weg), lässt sich aber aus einem Bisasam aus dem noch
+        | käuflichen Let's Go entwickeln. Ohne diesen Vergleich stünde es fälschlich
+        | auf 🔴 und würde den Nutzer auf eine unnötige Jagd schicken (spec.md 2.8).
+        */
+        if ($fallback?->isUsable()) {
+            $ueberVorstufe = $this->evaluateSources(
+                $this->usableSources($fallback->sources),
+                $context,
+                $go,
+                viaEvolution: true,
+                prefix: $fallback->label().' · ',
+            );
 
-        if ($sources->isEmpty() && $fallback?->isUsable()) {
-            $sources = $this->usableSources($fallback->sources);
-            $viaEvolution = $sources->isNotEmpty();
+            if ($ueberVorstufe->level->urgency() < $ergebnis->level->urgency()) {
+                $ergebnis = $ueberVorstufe;
+            }
         }
 
+        return $this->applyDifficultyFloor($ergebnis, $form);
+    }
+
+    /**
+     * Die eigentliche Stufenlogik für einen Satz Bezugsquellen.
+     *
+     * @param  Collection<int,Obtainability>  $sources
+     */
+    private function evaluateSources(
+        Collection $sources,
+        PriorityContext $context,
+        ?GoAvailability $go,
+        bool $viaEvolution = false,
+        string $prefix = '',
+    ): PriorityResult {
         $difficulty = $this->difficultyFrom($sources, $viaEvolution);
         $consoles = $this->consolesFrom($sources);
-        $prefix = $viaEvolution ? $fallback->label().' · ' : '';
 
         // 🟢 Einfach: Es gibt eine Quelle in einem Spiel, das der Nutzer besitzt.
         $ownedGameSources = $sources->filter(
@@ -167,6 +193,33 @@ class PriorityEngine
             routes: $this->routeLabels($sources, $prefix),
             consoles: $consoles,
             goRescuable: $this->goRescuable($go),
+        );
+    }
+
+    /**
+     * Die Schwierigkeit darf nie unter dem liegen, was am Pokémon selbst steht.
+     *
+     * `pokedex:recalculate` schreibt dort bereits die Zuschläge für legendäre und
+     * mysteriöse Arten hinein. Ohne diese Untergrenze käme Mew als „leicht" durch,
+     * nur weil die PokéAPI für Smaragd einen Wildfang auf Eiland 9 kennt – der
+     * war in Wahrheit an ein längst abgelaufenes Ticket-Event gebunden.
+     */
+    private function applyDifficultyFloor(PriorityResult $ergebnis, PokemonForm $form): PriorityResult
+    {
+        $floor = $form->pokemon?->difficulty;
+
+        if ($floor === null || $floor->weight() <= $ergebnis->difficulty->weight()) {
+            return $ergebnis;
+        }
+
+        return new PriorityResult(
+            level: $ergebnis->level,
+            difficulty: $floor,
+            reason: $ergebnis->reason,
+            routes: $ergebnis->routes,
+            consoles: $ergebnis->consoles,
+            goRescuable: $ergebnis->goRescuable,
+            obtainableAtAll: $ergebnis->obtainableAtAll,
         );
     }
 
