@@ -256,3 +256,70 @@ it('bricht bei einer kaputten Art nicht ab, sondern überspringt sie', function 
 
     expect(Pokemon::count())->toBe(1);
 });
+
+it('hält Regionalform-Typen aus der Basisform heraus', function () {
+    Http::fake([
+        '*/pokemon-species/1' => Http::response(speciesAntwort(1, 'meowth', 'Mauzi', [
+            'varieties' => [
+                ['is_default' => true, 'pokemon' => ['name' => 'meowth']],
+                ['is_default' => false, 'pokemon' => ['name' => 'meowth-galar']],
+                ['is_default' => false, 'pokemon' => ['name' => 'meowth-alola']],
+            ],
+        ])),
+        '*/pokemon/meowth-galar' => Http::response(pokemonAntwort('meowth-galar', ['steel'])),
+        '*/pokemon/meowth-alola' => Http::response(pokemonAntwort('meowth-alola', ['dark'])),
+        '*/pokemon/meowth' => Http::response(pokemonAntwort('meowth', ['normal'])),
+        '*evolution-chain*' => Http::response(['chain' => ['species' => ['name' => 'meowth'], 'evolves_to' => []]]),
+    ]);
+
+    $this->artisan('pokedex:import', ['--to' => 1])->assertSuccessful();
+
+    $mauzi = Pokemon::first();
+
+    // Die Art selbst ist nur Normal – Stahl und Unlicht gehören den Formen.
+    expect($mauzi->types->pluck('slug')->all())->toBe(['normal'])
+        ->and($mauzi->baseForm->displayTypes()->pluck('slug')->all())->toBe(['normal'])
+        ->and(PokemonForm::where('slug', 'meowth-galar')->first()->displayTypes()->pluck('slug')->all())
+        ->toBe(['steel']);
+});
+
+it('überspringt Mützen- und Trance-Formen trotz Regionsnamen im Slug', function () {
+    Http::fake([
+        '*/pokemon-species/1' => Http::response(speciesAntwort(1, 'pikachu', 'Pikachu', [
+            'varieties' => [
+                ['is_default' => true, 'pokemon' => ['name' => 'pikachu']],
+                ['is_default' => false, 'pokemon' => ['name' => 'pikachu-alola-cap']],
+            ],
+        ])),
+        '*/pokemon/pikachu' => Http::response(pokemonAntwort('pikachu', ['electric'])),
+        '*evolution-chain*' => Http::response(['chain' => ['species' => ['name' => 'pikachu'], 'evolves_to' => []]]),
+    ]);
+
+    $this->artisan('pokedex:import', ['--to' => 1])->assertSuccessful();
+
+    expect(PokemonForm::count())->toBe(1)
+        ->and(Pokemon::first()->types->pluck('slug')->all())->toBe(['electric']);
+});
+
+it('räumt eine früher fälschlich importierte Form beim erneuten Lauf weg', function () {
+    $pokemon = Pokemon::factory()->withBaseForm()->create(['slug' => 'pikachu', 'dex_nr' => 1]);
+    PokemonForm::factory()->regional()->for($pokemon)->create(['slug' => 'pikachu-alola-cap']);
+
+    expect(PokemonForm::count())->toBe(2);
+
+    Http::fake([
+        '*/pokemon-species/1' => Http::response(speciesAntwort(1, 'pikachu', 'Pikachu', [
+            'varieties' => [
+                ['is_default' => true, 'pokemon' => ['name' => 'pikachu']],
+                ['is_default' => false, 'pokemon' => ['name' => 'pikachu-alola-cap']],
+            ],
+        ])),
+        '*/pokemon/pikachu' => Http::response(pokemonAntwort('pikachu', ['electric'])),
+        '*evolution-chain*' => Http::response(['chain' => ['species' => ['name' => 'pikachu'], 'evolves_to' => []]]),
+    ]);
+
+    $this->artisan('pokedex:import', ['--to' => 1])->assertSuccessful();
+
+    expect(PokemonForm::count())->toBe(1)
+        ->and(PokemonForm::where('slug', 'pikachu-alola-cap')->exists())->toBeFalse();
+});

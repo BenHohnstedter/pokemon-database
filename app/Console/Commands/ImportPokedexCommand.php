@@ -45,9 +45,16 @@ class ImportPokedexCommand extends Command
 
     /**
      * Formen, die HOME nicht dauerhaft speichert bzw. die reine Kampfzustände
-     * sind – werden nie importiert (spec.md 2.2).
+     * oder Kostüme sind – werden nie importiert (spec.md 2.2).
+     *
+     * `-cap` und `-zen` stehen hier, weil sie sonst über den Regionsvergleich
+     * hereinrutschen: "pikachu-alola-cap" ist eine Mützen-Variante und keine
+     * Alola-Form (die es für Pikachu gar nicht gibt), "darmanitan-galar-zen"
+     * der Trance-Modus der Galar-Form.
      */
-    private const SKIPPED_FORM_MARKERS = ['-mega', '-gmax', '-totem', '-eternamax', '-starter', '-busted'];
+    private const SKIPPED_FORM_MARKERS = [
+        '-mega', '-gmax', '-totem', '-eternamax', '-starter', '-busted', '-cap', '-zen',
+    ];
 
     public function handle(PokeApiClient $api): int
     {
@@ -156,6 +163,8 @@ class ImportPokedexCommand extends Command
     /** Legt Basisform und – je nach Option – Regional-/Sonderformen an. */
     private function upsertForms(PokeApiClient $api, Pokemon $pokemon, array $species, $typeIds): void
     {
+        $this->pruneSkippedForms($pokemon, $species);
+
         foreach ($species['varieties'] ?? [] as $variety) {
             $slug = $variety['pokemon']['name'] ?? null;
 
@@ -207,6 +216,26 @@ class ImportPokedexCommand extends Command
                 ]);
             }
         }
+    }
+
+    /**
+     * Formen entfernen, die inzwischen als "nicht speicherbar" gelten.
+     *
+     * Ohne das bliebe eine einmal falsch importierte Form für immer stehen –
+     * der Command soll aber wiederholbar sein und dabei auch aufräumen
+     * (spec.md 4).
+     */
+    private function pruneSkippedForms(Pokemon $pokemon, array $species): void
+    {
+        $erlaubt = collect($species['varieties'] ?? [])
+            ->pluck('pokemon.name')
+            ->filter(fn (?string $slug) => $slug !== null && ! $this->isSkippedForm($slug))
+            ->all();
+
+        PokemonForm::query()
+            ->where('pokemon_id', $pokemon->id)
+            ->when($erlaubt !== [], fn ($q) => $q->whereNotIn('slug', $erlaubt))
+            ->delete();
     }
 
     /**

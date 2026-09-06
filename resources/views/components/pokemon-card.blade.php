@@ -63,8 +63,9 @@
         {{ $form->name_de }}
     </a>
 
+    {{-- Die Form kann eigene Typen haben: Alola-Vulpix ist Eis, nicht Feuer. --}}
     <div class="flex flex-wrap justify-center gap-0.5">
-        @foreach ($pokemon->types as $type)
+        @foreach ($form->displayTypes() as $type)
             <x-type-badge :type="$type" />
         @endforeach
     </div>

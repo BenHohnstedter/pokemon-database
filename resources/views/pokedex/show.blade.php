@@ -84,13 +84,19 @@
                         </div>
                     @endauth
 
+                    <div class="mt-3 flex flex-wrap justify-center gap-1">
+                        @foreach ($form->displayTypes() as $type)
+                            <x-type-badge :type="$type" />
+                        @endforeach
+                    </div>
+
                     <p class="mt-3 text-xs text-dex-muted">{{ $eintrag->priority->reason }}</p>
                 </div>
             @endforeach
 
             {{-- Typen und Basiswerte --}}
             <div class="pixel-panel p-4">
-                <h2 class="font-pixel text-[10px] uppercase text-dex-muted">Typen</h2>
+                <h2 class="font-pixel text-[10px] uppercase text-dex-muted">Typen der Basisform</h2>
                 <div class="mt-2 flex flex-wrap gap-1">
                     @foreach ($pokemon->types as $type)
                         <x-type-badge :type="$type" />

@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 class PokemonForm extends Model
 {
@@ -36,6 +38,28 @@ class PokemonForm extends Model
     public function ownerships(): HasMany
     {
         return $this->hasMany(UserPokemonForm::class);
+    }
+
+    /**
+     * Eigene Typen dieser Form. Nur Regional- und Sonderformen haben welche –
+     * die Basisform nutzt die Typen des Pokémon.
+     */
+    public function types(): BelongsToMany
+    {
+        return $this->belongsToMany(Type::class, 'pokemon_type', 'pokemon_form_id', 'type_id')
+            ->withPivot('slot')
+            ->orderBy('pokemon_type.slot');
+    }
+
+    /**
+     * Die Typen, die im UI zu dieser Form gehören: eigene, sonst die der Art.
+     * Alola-Vulpix ist Eis, nicht Feuer.
+     */
+    public function displayTypes(): Collection
+    {
+        $eigene = $this->types;
+
+        return $eigene->isNotEmpty() ? $eigene : ($this->pokemon?->types ?? collect());
     }
 
     public function scopeBase(Builder $query): Builder

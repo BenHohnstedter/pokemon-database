@@ -56,9 +56,17 @@ class Pokemon extends Model
         return $this->hasMany(PokemonForm::class)->where('form_type', FormType::Regional->value);
     }
 
+    /**
+     * Die Typen der Basisform.
+     *
+     * Der Filter auf pokemon_form_id ist zwingend: Regionalformen hängen mit
+     * eigenen Zeilen an derselben Pivot-Tabelle, sonst stünde bei Mauzi
+     * "Normal/Unlicht/Stahl" und bei Pikachu "Elektro/Elektro".
+     */
     public function types(): BelongsToMany
     {
         return $this->belongsToMany(Type::class, 'pokemon_type')
+            ->wherePivotNull('pokemon_form_id')
             ->withPivot(['slot', 'pokemon_form_id'])
             ->orderBy('pokemon_type.slot');
     }
