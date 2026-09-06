@@ -19,7 +19,8 @@ was davon eine tickende Uhr hat.*
 |---|---|
 | **Pokédex** | Alle Arten mit deutschen Namen, Typen, Artwork, Shiny-Sprite und Entwicklungskette |
 | **Prioritäts-Engine** | Sechs Dringlichkeitsstufen von 🟢 *einfach* bis 🔴 *Bank-Deadline*, berechnet aus Spielebesitz, GO-Region und den echten Transferwegen nach HOME |
-| **Bezugsquellen** | Pro Pokémon: welches Spiel, welche Methode, welche Route, welcher Weg nach HOME |
+| **Bezugsquellen** | Pro Pokémon: welches Spiel, welche Methode, welche Route, welcher Weg nach HOME — die eigenen Spiele stehen zuerst |
+| **Spiel für Spiel** | „Ich bin jetzt in diesem Spiel": alles auflisten, was dort noch fehlt, und direkt in der Liste abhaken |
 | **Mehrfach-Fang** | „Fange 3× Bisasam: 1× so lassen, 1× zu Bisaknosp entwickeln …" — für Stufen, die nur durch Entwicklung erreichbar sind |
 | **Formen** | Regionalformen und Shiny als eigene Fortschrittsbalken, per Einstellung in den Hauptbalken einrechenbar |
 | **Pokémon GO** | Regionalexklusivität gegen die eigene Weltregion abgeglichen; ein GO-Weg entschärft die Bank-Deadline |
@@ -102,10 +103,21 @@ Hauptspiel ihrer Generation nach, klar als Annahme gekennzeichnet
 `--dry-run` erst ansehen, mit `--remove` wieder entfernen, sobald echte Daten
 per `pokedex:import-sources` vorliegen.
 
-Das ist kein Versehen: `CuratedObtainabilitySeeder` und `GoAvailabilitySeeder`
-hängen ihre Einträge an konkrete Pokémon. Laufen sie vor dem Import, finden sie
-nichts und legen nichts an – Starter, Fossilien und die GO-Regionalexklusiven
-fehlten dann. Beide Seeder sagen in dem Fall Bescheid und sind wiederholbar.
+Das ist kein Versehen: `CuratedObtainabilitySeeder`, `RemakeObtainabilitySeeder`
+und `GoAvailabilitySeeder` hängen ihre Einträge an konkrete Pokémon. Laufen sie
+vor dem Import, finden sie nichts und legen nichts an – Starter, Fossilien, der
+Bestand der Remakes und die GO-Regionalexklusiven fehlten dann. Alle drei sagen
+in dem Fall Bescheid und sind wiederholbar.
+
+`RemakeObtainabilitySeeder` überträgt dabei die Fundorte der Originalspiele auf
+ihre Neuauflagen (Diamant/Perl → Strahlender Diamant/Leuchtende Perle,
+Feuerrot/Blattgrün → Switch-Neuauflage). Die PokéAPI kennt für die Remakes
+praktisch keine Fundorte, weshalb die App sonst behauptet, fast der ganze
+Sinnoh-Dex sei nur über Pokémon Bank erreichbar. Ein Remake enthält dieselben
+Arten — die Übernahme ist also keine Schätzung, wohl aber der genaue Fundort,
+der abweichen kann; das steht als Hinweis an jeder Zeile. Alle so entstandenen
+Einträge tragen `source = remake:<original>` und lassen sich gezielt wieder
+entfernen.
 
 Für einen schnellen Testlauf reicht ein Ausschnitt:
 
@@ -180,7 +192,7 @@ mit Schrägstrichen, dotenv deutet Backslashes als Escape-Zeichen).
 app/
 ├── Console/Commands/   Import- und Wartungsbefehle
 ├── Enums/              Dringlichkeit, Schwierigkeit, Methoden, Regionen, Plattformen
-├── Http/Controllers/   Pokédex, Sammlung, Dashboard, Einstellungen, Statistik, Trainerkarte
+├── Http/Controllers/   Pokédex, Spiele, Sammlung, Dashboard, Einstellungen, Statistik, Trainerkarte
 ├── Listeners/          Login-Streak
 ├── Models/             Eloquent-Modelle
 ├── Services/           Prioritäts-Engine, Fortschritt, Mehrfach-Fang, Import, Achievements
@@ -245,6 +257,12 @@ GO-Rettungsweg — bei einer Deadline ist eine Warnung zu viel besser als eine z
   `still_purchasable` und Titel, die nach dem Projektstart erschienen sind.
 - Der GO-Datensatz ist bewusst ein belastbarer Kern, kein Vollbestand; Ergänzungen gehören per
   `pokedex:import-go` aus einer gepflegten CSV nachgeladen.
+- **Legenden: Arceus hat nur drei Fundorte.** Die PokéAPI liefert für den Titel keine
+  Encounter-Daten, und weil er kein Remake ist, greift auch `RemakeObtainabilitySeeder` nicht.
+  Der Hisui-Bestand müsste von Hand aus Bulbapedia nachgetragen werden. Für die Priorisierung
+  fällt das kaum ins Gewicht, weil der Sinnoh-Bestand über die BDSP-Spiegelung abgedeckt ist.
+- **Titel und Erscheinungsjahr der Switch-Neuauflage von Feuerrot/Blattgrün** sind im
+  `GameSeeder` geschätzt und gehören gegengeprüft, sobald sie offiziell feststehen.
 
 ---
 

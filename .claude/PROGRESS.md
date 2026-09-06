@@ -2,6 +2,81 @@
 
 Kurzer Stand je Session/Phase. Neuester Eintrag oben. Am Ende jeder Session aktualisieren.
 
+## 2026-09-06 — Spielansicht, Quellen-Gruppierung, Remake-Daten
+
+### Vom Nutzer gemeldet, umgesetzt
+
+1. **Remakes hatten fast keine Fundorte.** Die PokéAPI kennt für Strahlender Diamant und
+   Leuchtende Perle fünf Arten — gegenüber knapp 300 in Diamant und Perl. Die App
+   behauptete daraufhin, fast der ganze Sinnoh-Dex sei nur über alte Hardware und damit
+   über Pokémon Bank erreichbar. Neuer `RemakeObtainabilitySeeder` überträgt den Bestand
+   der Originale auf ihre Neuauflagen (Details in `FEATURE-UPDATES.md` 7).
+2. **Feuerrot/Blattgrün für Switch** sind jetzt im `GameSeeder` — mit dem Bestand der
+   GBA-Originale inklusive Ho-Oh und Lugia (Eiland 9). Beide sind damit ohne Bank
+   erreichbar, wie vom Nutzer beschrieben.
+3. **Mew und Jirachi in BDSP** über Speicherstände anderer Switch-Titel, ohne Event.
+4. **Bezugsquellen nach eigenen Spielen getrennt**: „✔ In Deinen Spielen" zuerst, dann
+   „Außerdem in diesen Spielen". Am Beispiel des Nutzers (Kapilz, sechs Titel, davon X im
+   Besitz) live geprüft.
+5. **Spiel-für-Spiel-Ansicht** unter `/spiele` — Übersicht mit Restzahlen je Titel,
+   Detailseite mit allem, was dort noch fehlt, und Abhaken direkt in der Liste.
+
+### Wirkung auf den echten Bestand
+
+| Kennzahl | vorher | nachher |
+|---|---|---|
+| Arten nur über Bank-Titel erreichbar | 355 | 219 |
+| 🔴 beim Demo-Nutzer (Spiel fehlt) | 88 | 58 |
+| Quellen in Strahlender Diamant | 5 | ~280 |
+
+### Ein echter Layoutfehler, gefunden durch den erweiterten Responsive-Test
+
+Die Spielansicht ließ sich auf dem Handy um ~56 px seitlich schieben. Ursache ist
+subtiler als beim letzten Mal: Chrome rechnet die Mindestbreite des Tabelleninhalts
+(`min-w-[40rem]`) bis zur Wurzel hoch, obwohl `overflow-x: auto` sie längst abschneidet.
+Weder `max-width: 100%` noch `overflow-x: clip` auf Panel, `main`, `body` oder `html`
+halten das auf — erst `contain: layout` tut es. Dafür gibt es jetzt die Utility
+`.pixel-scroll-x`, die alle drei breiten Tabellen der App benutzen.
+
+Der Responsive-Test misst deshalb nicht mehr `documentElement.scrollWidth`: der meldet bei
+einem inneren Scroll-Container die ungekürzte Inhaltsbreite und hätte künftig genau die
+richtige Lösung angemeckert. Gemessen wird jetzt, was der Nutzer merkt — lässt sich die
+Seite tatsächlich schieben? — plus die überstehenden Elemente, die kein Vorfahre clippt.
+
+### Tests: 288 grün
+
+- **276 Unit-/Feature-Tests** (773 Assertions), darunter neu: Remake-Seeder (8),
+  Spielübersicht und -detailseite (11), Quellen-Gruppierung (4).
+- **12 Dusk-Browsertests** (92 Assertions), neu: der komplette Weg von der Spielübersicht
+  über die Liste bis zum Abhaken, und die Bank-Warnung auf einem Altspiel. Der
+  Responsive-Test deckt jetzt elf Seiten über fünf Breiten ab (neu: `/spiele`,
+  Spiel-Detail, Pokémon-Detail).
+
+### Weiterhin offen
+
+- **Legenden: Arceus hat nur 3 Fundorte.** Die PokéAPI liefert für den Titel keine
+  Encounter-Daten, und er ist kein Remake — die Spiegelung greift dort nicht. Die
+  Hisui-Liste müsste von Hand aus Bulbapedia nachgetragen werden. Praktisch fällt es kaum
+  ins Gewicht, weil der Sinnoh-Bestand über BDSP abgedeckt ist.
+- **GO-Datensatz ist ein Kern (21 Einträge), kein Vollbestand** — die Engine rechnet ohne
+  Eintrag bewusst konservativ ohne GO-Rettungsweg.
+- **Titel und Erscheinungsjahr der Switch-Neuauflage** von Feuerrot/Blattgrün sind
+  geschätzt und gehören gegengeprüft, sobald sie offiziell feststehen (Kommentar steht im
+  `GameSeeder`).
+- Spieleliste im Übrigen gegen Bulbapedia/Serebii verifizieren, besonders
+  `still_purchasable`.
+- Fundorte sind englisch, solange `pokedex:import-encounters` ohne `--translate-locations`
+  läuft.
+- Kein Push nach GitHub — bislang nur lokale Commits (so abgestimmt).
+
+### Nächste Schritte
+
+1. Hisui-Bestand für Legenden: Arceus nachtragen (Bulbapedia), danach `pokedex:recalculate`
+2. GO-Vollbestand per `pokedex:import-go` aus einer gepflegten CSV nachladen
+3. Spieleliste gegen Bulbapedia/Serebii verifizieren
+4. Repo nach GitHub pushen (vorher noch einmal auf Persönliches gegenprüfen, spec.md 10)
+
+
 ## 2026-09-06 — Die App läuft, Feedback eingearbeitet, Tests vollständig
 
 ### Lauffähig

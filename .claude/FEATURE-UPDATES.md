@@ -103,3 +103,51 @@ Zwei Modi:
 
 Unbekannte Formen werden übersprungen und gemeldet, statt den Import abzubrechen. Die
 Datei enthält keine Kontodaten und kann gefahrlos weitergegeben werden.
+
+### 5. Bezugsquellen nach eigenen Spielen getrennt
+
+Auf der Detailseite standen alle Fundorte in einer Liste. Bei Kapilz sind das sechs Titel
+(HeartGold, SoulSilver, Schwarz 2, Weiß 2, X, Y) — die eigentliche Frage „komme ich mit
+dem ran, was ich habe?" beantwortete das nicht.
+
+Die Tabelle ist jetzt zweigeteilt: zuerst **„✔ In Deinen Spielen"**, darunter
+**„Außerdem in diesen Spielen"**. Wer noch keine Spiele eingetragen hat, sieht stattdessen
+den Hinweis, das nachzuholen — ohne diese Angabe kann die App die Trennung nicht leisten.
+
+### 6. Spiel-für-Spiel-Ansicht (`/spiele`)
+
+Neu gegenüber `spec.md`: Der Pokédex denkt von der Art aus („wo bekomme ich das?"). Wer
+eine Konsole in der Hand hat, denkt umgekehrt: erst das Spiel, dann die Liste.
+
+- `/spiele` zeigt alle Titel nach Generation, die eigenen markiert, mit der Zahl der dort
+  noch fehlenden Arten.
+- `/spiele/{spiel}` listet alles, was in genau diesem Titel noch zu holen ist — mit dem
+  Fundort **aus diesem Spiel**, nicht mit der insgesamt besten Route. Sonst stünde bei
+  jedem Eintrag ein Weg aus einem ganz anderen Titel.
+- Abhaken geht direkt in der Liste, ohne Umweg über die Detailseite.
+- Oben steht, wie das Gefangene nach HOME kommt — bei Bank-Titeln mit der Frist.
+
+### 7. Datenkorrekturen: Remakes erben den Bestand ihrer Originale
+
+Gemeldet vom Nutzer, bestätigt in den Daten: Die PokéAPI kennt für die Switch-Remakes
+kaum Fundorte — Strahlender Diamant und Leuchtende Perle hatten fünf Arten gegenüber
+knapp 300 in Diamant und Perl. Die App behauptete daraufhin, fast der ganze
+Sinnoh-Nationaldex sei nur über alte Hardware und damit über Pokémon Bank erreichbar.
+
+Ein Remake ist dasselbe Spiel mit derselben Artenliste. `RemakeObtainabilitySeeder`
+überträgt deshalb die Quellen der Originale (Diamant/Perl, Feuerrot/Blattgrün) auf ihre
+Neuauflagen, inklusive der Event-Legendären wie Ho-Oh und Lugia auf Eiland 9. Abgelaufene
+Events werden **nicht** mitübernommen. Dazu kommen Mew und Jirachi, die es in BDSP über
+Speicherstände anderer Switch-Titel ohne Event gibt.
+
+Alle so entstandenen Zeilen tragen `source = remake:<original>` und lassen sich gezielt
+wieder entfernen. Der Fundort stammt aus dem Original und kann im Remake abweichen (bei
+BDSP oft der Grand Underground) — das steht als Hinweis an jeder Zeile.
+
+Wirkung auf echte Daten: Arten, die nur über Bank-Titel erreichbar sind, fielen von 355
+auf 219; beim Demo-Nutzer sanken die 🔴-Fälle von 88 auf 58.
+
+**Offen:** Für *Legenden: Arceus* liefert die PokéAPI keine Fundorte (3 Arten), und der
+Titel ist kein Remake — die Spiegelung greift dort nicht. Die Hisui-Liste müsste von Hand
+aus Bulbapedia nachgetragen werden. Praktische Auswirkung ist gering, weil der
+Sinnoh-Bestand inzwischen über BDSP abgedeckt ist.
