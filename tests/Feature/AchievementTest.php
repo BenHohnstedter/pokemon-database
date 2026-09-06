@@ -12,6 +12,7 @@ use App\Models\UserPokemonForm;
 use App\Services\AchievementService;
 use App\Services\OwnershipService;
 use Database\Seeders\AchievementSeeder;
+use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
     resetDexSequence();
@@ -184,4 +185,42 @@ it('lässt die XP beim Zurücknehmen nicht unter null fallen', function () {
     $this->ownership->set($this->user, $pokemon->baseForm, owned: false);
 
     expect($this->user->fresh()->xp)->toBe(0);
+});
+
+it('rechnet Regionalform-Typen nicht der Basisform an', function () {
+    $normal = Type::factory()->create(['slug' => 'normal']);
+    $stahl = Type::factory()->create(['slug' => 'steel']);
+
+    // Mauzi: Basisform Normal, Galar-Form Stahl.
+    $mauzi = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Mauzi']);
+    $galar = PokemonForm::factory()->regional('galar')->for($mauzi)->create();
+    $mauzi->types()->attach($normal, ['slot' => 1]);
+    DB::table('pokemon_type')->insert([
+        'pokemon_id' => $mauzi->id,
+        'pokemon_form_id' => $galar->id,
+        'type_id' => $stahl->id,
+        'slot' => 1,
+    ]);
+
+    // Stahlos deckt Stahl als Basisform ab – damit gehört Stahl zur Zielmenge.
+    $stahlos = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Stahlos']);
+    $stahlos->types()->attach($stahl, ['slot' => 1]);
+
+    // Nur Mauzis Basisform im Bestand, nicht die Galar-Form.
+    UserPokemonForm::create([
+        'user_id' => $this->user->id,
+        'pokemon_form_id' => $mauzi->baseForm->id,
+        'owned' => true,
+    ]);
+
+    // Vor der Korrektur zählte die Stahl-Zeile der Galar-Form hier mit.
+    expect($this->service->fulfilledKeys($this->user))->not->toContain('all_types');
+
+    UserPokemonForm::create([
+        'user_id' => $this->user->id,
+        'pokemon_form_id' => $stahlos->baseForm->id,
+        'owned' => true,
+    ]);
+
+    expect($this->service->fulfilledKeys($this->user->fresh()))->toContain('all_types');
 });

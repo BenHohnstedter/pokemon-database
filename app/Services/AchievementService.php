@@ -198,11 +198,20 @@ class AchievementService
         return $fertig;
     }
 
-    /** Von jedem der 18 Typen mindestens ein Pokémon (spec.md 2.9). */
+    /**
+     * Von jedem der 18 Typen mindestens ein Pokémon (spec.md 2.9).
+     *
+     * Gezählt werden nur Basisformen und nur deren eigene Typzeilen
+     * (pokemon_form_id null). Ohne diesen Filter würde ein besessenes Mauzi
+     * auch Stahl und Unlicht gutschreiben – die Typen seiner Galar- und
+     * Alola-Form, die man gar nicht besitzt.
+     */
     private function hasEveryType(User $user): bool
     {
         $typenGesamt = Type::query()
-            ->whereExists(fn ($q) => $q->from('pokemon_type')->whereColumn('pokemon_type.type_id', 'types.id'))
+            ->whereExists(fn ($q) => $q->from('pokemon_type')
+                ->whereColumn('pokemon_type.type_id', 'types.id')
+                ->whereNull('pokemon_type.pokemon_form_id'))
             ->count();
 
         if ($typenGesamt === 0) {
@@ -216,6 +225,8 @@ class AchievementService
                     ->where('user_pokemon_forms.user_id', '=', $user->id)
                     ->where('user_pokemon_forms.owned', '=', true);
             })
+            ->where('pokemon_forms.form_type', FormType::Base->value)
+            ->whereNull('pokemon_type.pokemon_form_id')
             ->distinct()
             ->count('pokemon_type.type_id');
 
