@@ -23,6 +23,9 @@ class DatabaseSeeder extends Seeder
             GameSeeder::class,
             AchievementSeeder::class,
             CuratedObtainabilitySeeder::class,
+            // Muss nach dem Fundort-Import laufen: übernimmt die Quellen der
+            // Originalspiele auf ihre Remakes.
+            RemakeObtainabilitySeeder::class,
             GoAvailabilitySeeder::class,
         ]);
     }

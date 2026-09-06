@@ -82,6 +82,19 @@ class GameSeeder extends Seeder
         ['shining-pearl', 'Leuchtende Perle', 'Shining Pearl', 8, Platform::Switch, 2021, true, false, true, 'Direkt an HOME'],
         ['legends-arceus', 'Legenden: Arceus', 'Legends: Arceus', 8, Platform::Switch, 2022, true, false, true, 'Direkt an HOME'],
 
+        /*
+         * Switch-Neuauflage von Feuerrot/Blattgrün, laut spec.md 1 ab Oktober
+         * 2026 an HOME angebunden. Der offizielle Titel stand beim Anlegen noch
+         * nicht fest – Name und Erscheinungsjahr gehören gegengeprüft, sobald er
+         * bekannt ist. Der Artenbestand wird per RemakeObtainabilitySeeder aus
+         * den GBA-Originalen übernommen, inklusive Ho-Oh und Lugia (Eiland 9).
+         *
+         * Warum das wichtig ist: Über diesen Weg kommen die Kanto-Arten ohne
+         * Pokémon Bank nach HOME. Fehlte der Eintrag, stünden sie alle auf 🔴.
+         */
+        ['firered-switch', 'Feuerrot (Switch)', 'FireRed (Switch)', 3, Platform::Switch, 2026, true, false, true, 'Neuauflage – direkt an HOME. Titel und Erscheinungsdatum noch gegenzuprüfen.'],
+        ['leafgreen-switch', 'Blattgrün (Switch)', 'LeafGreen (Switch)', 3, Platform::Switch, 2026, true, false, true, 'Neuauflage – direkt an HOME. Titel und Erscheinungsdatum noch gegenzuprüfen.'],
+
         // ── Gen 9 ────────────────────────────────────────────────────────────
         ['scarlet', 'Karmesin', 'Scarlet', 9, Platform::Switch, 2022, true, false, true, 'Direkt an HOME, inkl. DLC Die Schatzkammer von Zone Null'],
         ['violet', 'Purpur', 'Violet', 9, Platform::Switch, 2022, true, false, true, 'Direkt an HOME, inkl. DLC Die Schatzkammer von Zone Null'],
