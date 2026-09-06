@@ -12,6 +12,7 @@ use App\Models\UserPokemonForm;
 use App\Support\EvolutionFallback;
 use App\Support\PriorityContext;
 use App\Support\PriorityResult;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 
 /**
@@ -50,8 +51,10 @@ class PokedexQuery
         $this->primeLookups();
 
         return PokemonForm::query()
+            // Bewusst OHNE die Typen: die braucht nur die angezeigte Seite, und
+            // sie für alle 1.000+ Einträge zu hydrieren kostet spürbar Zeit.
+            // Der Aufrufer lädt sie für die Seite nach (loadTypesFor()).
             ->with([
-                'pokemon.types',
                 // Zwei Ebenen decken jede reguläre Entwicklungslinie ab
                 // (Basis → Mitte → Endstufe).
                 'pokemon.evolvesFrom:id,name_de,evolves_from_id',
@@ -114,6 +117,25 @@ class PokedexQuery
         return $this->evaluate($user)
             ->filter(fn (object $row) => $row->priority->isUrgent())
             ->count();
+    }
+
+    /**
+     * Lädt die Typen für eine Auswahl bewerteter Zeilen nach – üblicherweise
+     * für die 60 Einträge der aktuellen Seite.
+     *
+     * Ohne diesen Aufruf würde jede Karte ihre Typen einzeln nachladen
+     * (spec.md 7, Performance).
+     *
+     * @param  Collection<int,object>  $rows
+     */
+    public function loadTypesFor(Collection $rows): void
+    {
+        if ($rows->isEmpty()) {
+            return;
+        }
+
+        (new EloquentCollection($rows->pluck('form')->all()))
+            ->load(['types', 'pokemon.types']);
     }
 
     /** Bezugsquellen einer Art, inklusive verdrahteter game-Relation. */

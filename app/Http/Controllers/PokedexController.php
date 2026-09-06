@@ -138,8 +138,13 @@ class PokedexController extends Controller
         $perPage = (int) config('pokedex.per_page', 60);
         $page = max(1, (int) $request->query('page', 1));
 
+        $seite = $rows->forPage($page, $perPage)->values();
+
+        // Typen erst jetzt nachladen – nur für die tatsächlich gezeigten Karten.
+        $this->query->loadTypesFor($seite);
+
         return new LengthAwarePaginator(
-            $rows->forPage($page, $perPage)->values(),
+            $seite,
             $rows->count(),
             $perPage,
             $page,

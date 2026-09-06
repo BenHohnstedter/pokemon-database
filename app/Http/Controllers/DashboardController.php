@@ -29,6 +29,12 @@ class DashboardController extends Controller
         $offen = $bewertet->reject(fn (object $row) => $row->owned);
         $dringend = $offen->filter(fn (object $row) => $row->priority->isUrgent());
 
+        // Nur die tatsächlich angezeigten Karten brauchen ihre Typen.
+        $dringendTop = $dringend->take(12)->values();
+        $naechsteZiele = $offen->filter(fn (object $row) => $row->favourite)->take(6)->values();
+
+        $this->query->loadTypesFor($dringendTop->merge($naechsteZiele));
+
         return view('dashboard', [
             'gesamt' => $this->progress->total($user),
             'basis' => $this->progress->base($user),
@@ -38,13 +44,10 @@ class DashboardController extends Controller
 
             'deadline' => $this->deadline,
             'dringendAnzahl' => $dringend->count(),
-            'dringendTop' => $dringend->take(12)->values(),
+            'dringendTop' => $dringendTop,
 
             'verteilung' => $this->verteilung($offen),
-            'naechsteZiele' => $offen
-                ->filter(fn (object $row) => $row->favourite)
-                ->take(6)
-                ->values(),
+            'naechsteZiele' => $naechsteZiele,
         ]);
     }
 
