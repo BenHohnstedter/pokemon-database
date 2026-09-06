@@ -77,6 +77,26 @@ enum PriorityLevel: string
         };
     }
 
+    /**
+     * Wie mühsam ist dieser Weg? Höher = schlechter.
+     *
+     * Bewusst getrennt von urgency(): dort steht 🔴 ganz oben, weil es am
+     * eiligsten ist. Beim Vergleich zweier Beschaffungswege ist aber "gar kein
+     * Weg" (⚪) das schlechteste Ergebnis, nicht das drittbeste – sonst gewänne
+     * eine Sackgasse gegen einen zwar mühsamen, aber gangbaren Bank-Weg.
+     */
+    public function hardship(): int
+    {
+        return match ($this) {
+            self::Owned => 0,
+            self::Easy => 1,
+            self::Purchasable => 2,
+            self::OldHardware => 3,
+            self::BankUrgent => 4,
+            self::TradeOnly => 5,
+        };
+    }
+
     /** Betrifft diese Stufe die Bank-Deadline? Speist das Countdown-Widget. */
     public function isBankCritical(): bool
     {

@@ -25,7 +25,7 @@ class PriorityEngine
     /**
      * @param  Collection<int,Obtainability>|null  $obtainabilities  Bezugsquellen der Form,
      *                                                               mit geladener game-Relation
-     * @param  EvolutionFallback|null  $fallback  Weg der nächsten fangbaren Vorstufe
+     * @param  array<int,EvolutionFallback>  $fallbacks  Wege über die Vorstufen der Linie
      */
     public function evaluate(
         PokemonForm $form,
@@ -33,7 +33,7 @@ class PriorityEngine
         bool $owned,
         ?Collection $obtainabilities = null,
         ?GoAvailability $go = null,
-        ?EvolutionFallback $fallback = null,
+        array $fallbacks = [],
     ): PriorityResult {
         if ($owned) {
             return new PriorityResult(
@@ -47,22 +47,27 @@ class PriorityEngine
         $ergebnis = $this->evaluateSources($sources, $context, $go);
 
         /*
-        | Der Umweg über die Vorstufe wird IMMER mitgerechnet, nicht nur wenn die
-        | Stufe selbst gar keine Quelle hat: Bisaknosp ist wild nur in X zu finden
-        | (3DS, also Bank-Weg), lässt sich aber aus einem Bisasam aus dem noch
-        | käuflichen Let's Go entwickeln. Ohne diesen Vergleich stünde es fälschlich
-        | auf 🔴 und würde den Nutzer auf eine unnötige Jagd schicken (spec.md 2.8).
+        | Die Umwege über die Vorstufen werden IMMER mitgerechnet, nicht nur wenn
+        | die Stufe selbst gar keine Quelle hat: Bisaknosp ist wild nur in X zu
+        | finden (3DS, also Bank-Weg), lässt sich aber aus einem Bisasam des noch
+        | käuflichen Let's Go entwickeln. Und zwar über die ganze Linie hinweg –
+        | für Bisaflor zählt auch Bisasam, nicht nur die direkte Vorstufe
+        | (spec.md 2.8).
         */
-        if ($fallback?->isUsable()) {
+        foreach ($fallbacks as $fallback) {
+            if (! $fallback->isUsable()) {
+                continue;
+            }
+
             $ueberVorstufe = $this->evaluateSources(
                 $this->usableSources($fallback->sources),
                 $context,
                 $go,
-                viaEvolution: true,
+                evolutionSteps: $fallback->steps,
                 prefix: $fallback->label().' · ',
             );
 
-            if ($ueberVorstufe->level->urgency() < $ergebnis->level->urgency()) {
+            if ($ueberVorstufe->level->hardship() < $ergebnis->level->hardship()) {
                 $ergebnis = $ueberVorstufe;
             }
         }
@@ -79,10 +84,10 @@ class PriorityEngine
         Collection $sources,
         PriorityContext $context,
         ?GoAvailability $go,
-        bool $viaEvolution = false,
+        int $evolutionSteps = 0,
         string $prefix = '',
     ): PriorityResult {
-        $difficulty = $this->difficultyFrom($sources, $viaEvolution);
+        $difficulty = $this->difficultyFrom($sources, $evolutionSteps);
         $consoles = $this->consolesFrom($sources);
 
         // 🟢 Einfach: Es gibt eine Quelle in einem Spiel, das der Nutzer besitzt.
@@ -93,7 +98,7 @@ class PriorityEngine
         if ($ownedGameSources->isNotEmpty()) {
             return new PriorityResult(
                 level: PriorityLevel::Easy,
-                difficulty: $this->difficultyFrom($ownedGameSources, $viaEvolution),
+                difficulty: $this->difficultyFrom($ownedGameSources, $evolutionSteps),
                 reason: 'Du besitzt bereits ein Spiel, in dem es vorkommt.',
                 routes: $this->routeLabels($ownedGameSources, $prefix),
                 consoles: $this->consolesFrom($ownedGameSources),
@@ -135,7 +140,7 @@ class PriorityEngine
         if ($purchasable->isNotEmpty()) {
             return new PriorityResult(
                 level: PriorityLevel::Purchasable,
-                difficulty: $this->difficultyFrom($purchasable, $viaEvolution),
+                difficulty: $this->difficultyFrom($purchasable, $evolutionSteps),
                 reason: 'Spiel kaufen reicht – es ist noch regulär erhältlich.',
                 routes: $this->routeLabels($purchasable, $prefix),
                 consoles: $this->consolesFrom($purchasable),
@@ -253,7 +258,7 @@ class PriorityEngine
      *
      * @param  Collection<int,Obtainability>  $sources
      */
-    private function difficultyFrom(Collection $sources, bool $viaEvolution = false): Difficulty
+    private function difficultyFrom(Collection $sources, int $evolutionSteps = 0): Difficulty
     {
         if ($sources->isEmpty()) {
             return Difficulty::SehrSchwer;
@@ -264,9 +269,13 @@ class PriorityEngine
             ->sortBy(fn (Difficulty $d) => $d->weight())
             ->first();
 
-        // Erst fangen, dann entwickeln ist nie "leicht" – aber auch nicht beliebig
-        // viel schwerer, deshalb genau eine Stufe hoch.
-        return $viaEvolution ? $this->bump($easiest) : $easiest;
+        // Erst fangen, dann entwickeln ist nie "leicht": jede nötige Entwicklung
+        // macht die Beschaffung genau eine Stufe aufwendiger.
+        for ($i = 0; $i < $evolutionSteps; $i++) {
+            $easiest = $this->bump($easiest);
+        }
+
+        return $easiest;
     }
 
     private function bump(Difficulty $difficulty): Difficulty

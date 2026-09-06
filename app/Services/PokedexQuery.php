@@ -25,6 +25,9 @@ use Illuminate\Support\Collection;
  */
 class PokedexQuery
 {
+    /** Wie weit die Entwicklungskette nach oben verfolgt wird. */
+    private const MAX_EVOLUTION_DEPTH = 4;
+
     /** @var array<int,Collection<int,Obtainability>>|null */
     private ?array $sourcesByPokemon = null;
 
@@ -49,8 +52,10 @@ class PokedexQuery
         return PokemonForm::query()
             ->with([
                 'pokemon.types',
-                'pokemon.evolvesFrom:id,name_de,source_pokemon_id',
-                'pokemon.evolvesFrom.sourcePokemon:id,name_de',
+                // Zwei Ebenen decken jede reguläre Entwicklungslinie ab
+                // (Basis → Mitte → Endstufe).
+                'pokemon.evolvesFrom:id,name_de,evolves_from_id',
+                'pokemon.evolvesFrom.evolvesFrom:id,name_de,evolves_from_id',
             ])
             ->whereIn('form_type', array_map(fn (FormType $t) => $t->value, $formTypes))
             ->join('pokemon', 'pokemon.id', '=', 'pokemon_forms.pokemon_id')
@@ -73,7 +78,7 @@ class PokedexQuery
                         $owned,
                         $this->sourcesFor($form->pokemon_id),
                         $this->goFor($form->pokemon_id),
-                        $this->fallbackFor($form),
+                        $this->fallbacksFor($form),
                     ),
                 ];
             });
@@ -96,7 +101,7 @@ class PokedexQuery
             $owned,
             $this->sourcesFor($form->pokemon_id),
             $this->goFor($form->pokemon_id),
-            $this->fallbackFor($form),
+            $this->fallbacksFor($form),
         );
     }
 
@@ -126,35 +131,38 @@ class PokedexQuery
     }
 
     /**
-     * Der Weg über die Vorstufe, sofern es eine gibt.
+     * Die Wege über sämtliche Vorstufen der Linie (spec.md 2.8).
      *
-     * Wird für JEDE Stufe mit Vorstufe geliefert, nicht nur für die, die selbst
-     * keine Quelle hat – die Engine vergleicht beide Wege und nimmt den
-     * günstigeren (spec.md 2.8). `pokedex:recalculate` hat in
-     * `source_pokemon_id` schon die nächste fangbare Stufe aufgelöst, deshalb
-     * reicht hier ein Blick auf die direkte Vorstufe.
+     * Bewusst die ganze Kette und nicht nur die direkte Vorstufe: Bisaflor ist
+     * über Bisaknosp *und* über Bisasam erreichbar, und wenn Bisaknosp wild nur
+     * in einem Bank-Spiel vorkommt, ist der längere Weg über Bisasam der
+     * bessere. Die Engine vergleicht alle Kandidaten.
+     *
+     * @return array<int,EvolutionFallback>
      */
-    private function fallbackFor(PokemonForm $form): ?EvolutionFallback
+    private function fallbacksFor(PokemonForm $form): array
     {
+        $fallbacks = [];
         $vorstufe = $form->pokemon?->evolvesFrom;
+        $schritte = 1;
 
-        if ($vorstufe?->source_pokemon_id === null) {
-            return null;
+        while ($vorstufe !== null && $schritte <= self::MAX_EVOLUTION_DEPTH) {
+            $quellen = $this->sourcesFor($vorstufe->id);
+
+            if ($quellen->isNotEmpty()) {
+                $fallbacks[] = new EvolutionFallback(
+                    ancestorName: $vorstufe->name_de,
+                    sources: $quellen,
+                    evolutionSummary: $schritte === 1 ? $form->pokemon->evolution_summary_de : null,
+                    steps: $schritte,
+                );
+            }
+
+            $vorstufe = $vorstufe->evolvesFrom;
+            $schritte++;
         }
 
-        $quelle = $vorstufe->source_pokemon_id === $vorstufe->id
-            ? $vorstufe
-            : $vorstufe->sourcePokemon;
-
-        if ($quelle === null) {
-            return null;
-        }
-
-        return new EvolutionFallback(
-            $quelle->name_de,
-            $this->sourcesFor($quelle->id),
-            $form->pokemon->evolution_summary_de,
-        );
+        return $fallbacks;
     }
 
     /**

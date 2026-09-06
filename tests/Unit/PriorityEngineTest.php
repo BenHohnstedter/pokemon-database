@@ -240,10 +240,10 @@ it('erbt den Weg der fangbaren Vorstufe, wenn die Stufe nur per Entwicklung erre
         new PriorityContext(ownedGameIds: [$game->id]),
         owned: false,
         obtainabilities: collect(),
-        fallback: new EvolutionFallback(
+        fallbacks: [new EvolutionFallback(
             $basis->name_de,
             Obtainability::with('game')->where('pokemon_id', $basis->id)->get(),
-        ),
+        )],
     );
 
     expect($result)->toHavePriority(PriorityLevel::Easy)
@@ -329,10 +329,10 @@ it('zieht den Umweg über die Vorstufe auch dann heran, wenn die Stufe eine eige
         new PriorityContext(ownedGameIds: []),
         owned: false,
         obtainabilities: sources($mitte->baseForm),
-        fallback: new EvolutionFallback(
+        fallbacks: [new EvolutionFallback(
             $basis->name_de,
             Obtainability::with('game')->where('pokemon_id', $basis->id)->get(),
-        ),
+        )],
     );
 
     expect($result)->toHavePriority(PriorityLevel::Purchasable)
@@ -356,10 +356,10 @@ it('behält den eigenen Weg, wenn er günstiger ist als der über die Vorstufe',
         new PriorityContext(ownedGameIds: [$meins->id]),
         owned: false,
         obtainabilities: sources($stufe->baseForm),
-        fallback: new EvolutionFallback(
+        fallbacks: [new EvolutionFallback(
             $basis->name_de,
             Obtainability::with('game')->where('pokemon_id', $basis->id)->get(),
-        ),
+        )],
     );
 
     expect($result)->toHavePriority(PriorityLevel::Easy)
