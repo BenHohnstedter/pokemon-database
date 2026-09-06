@@ -1,0 +1,58 @@
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pokémon-Bank-Abschaltung
+    |--------------------------------------------------------------------------
+    |
+    | Stichtag für die Prioritäts-Engine und das Countdown-Widget (spec.md 2.7).
+    | Quellen nennen den 26./27.02.2027 je nach Zeitzone – wir rechnen mit dem
+    | frühesten Zeitpunkt, damit die App eher zu früh als zu spät warnt.
+    |
+    */
+    'bank_shutdown_at' => env('POKEMON_BANK_SHUTDOWN_AT', '2027-02-26 23:59:59'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | PokéAPI
+    |--------------------------------------------------------------------------
+    */
+    'pokeapi' => [
+        'base_url' => rtrim(env('POKEAPI_BASE_URL', 'https://pokeapi.co/api/v2'), '/'),
+        'timeout' => (int) env('POKEAPI_TIMEOUT', 30),
+        'retries' => (int) env('POKEAPI_RETRIES', 3),
+        'retry_delay_ms' => (int) env('POKEAPI_RETRY_DELAY', 500),
+        // Antworten werden auf Platte gecacht, damit ein erneuter Import nicht
+        // wieder tausende Requests auslöst (spec.md 4).
+        'cache_dir' => storage_path('app/pokeapi-cache'),
+        'cache_ttl_days' => (int) env('POKEAPI_CACHE_TTL_DAYS', 30),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Anzeige
+    |--------------------------------------------------------------------------
+    */
+    'per_page' => 60,
+
+    /*
+    |--------------------------------------------------------------------------
+    | XP-Vergabe (spec.md 2.9)
+    |--------------------------------------------------------------------------
+    */
+    'xp' => [
+        'base' => 10,
+        'difficulty_bonus' => [
+            'leicht' => 0,
+            'mittel' => 5,
+            'schwer' => 15,
+            'sehr_schwer' => 30,
+        ],
+        'legendary_bonus' => 25,
+        'mythical_bonus' => 40,
+        'shiny_multiplier' => 3,
+        'regional_bonus' => 5,
+    ],
+];
