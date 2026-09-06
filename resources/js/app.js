@@ -59,6 +59,17 @@ function dexToggle(config) {
 
                 const data = await response.json();
                 window.dispatchEvent(new CustomEvent('dex:xp', { detail: data }));
+
+                // Neuer Orden: Konfetti und Fanfare (spec.md 2.9).
+                if (Array.isArray(data.orden) && data.orden.length > 0) {
+                    feiereMeilenstein();
+
+                    if (config.sound) {
+                        sfx.milestone();
+                    }
+
+                    window.dispatchEvent(new CustomEvent('dex:orden', { detail: data.orden }));
+                }
             } catch (error) {
                 // Zurückdrehen, damit die Anzeige nicht lügt.
                 this.owned = vorher.owned;

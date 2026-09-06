@@ -7,6 +7,7 @@
 use App\Models\Pokemon;
 use App\Models\User;
 use App\Models\UserPokemonForm;
+use Database\Seeders\AchievementSeeder;
 
 beforeEach(function () {
     resetDexSequence();
@@ -182,4 +183,53 @@ it('lehnt eine leere Masseneingabe ab', function () {
     $this->actingAs($this->user)
         ->post(route('collection.bulk.apply'), ['eingabe' => '', 'aktion' => 'besitzen'])
         ->assertSessionHasErrors('eingabe');
+});
+
+it('meldet neu freigeschaltete Orden in der Antwort zurück', function () {
+    $this->seed(AchievementSeeder::class);
+    $form = Pokemon::factory()->withBaseForm()->create()->baseForm;
+
+    $antwort = $this->actingAs($this->user)
+        ->postJson(route('collection.toggle', $form))
+        ->assertOk();
+
+    // Der erste Fang schaltet "Erster Fang" frei – das UI feiert das.
+    expect(collect($antwort->json('orden'))->pluck('name'))->toContain('Erster Fang');
+});
+
+it('meldet beim zweiten Fang keinen Orden mehr', function () {
+    $this->seed(AchievementSeeder::class);
+
+    // Genug Arten, damit der Dex nach zwei Fängen nicht schon komplett ist –
+    // sonst fiele hier zu Recht der Orden "Vollständig".
+    Pokemon::factory()->withBaseForm()->count(8)->create();
+    $erste = Pokemon::factory()->withBaseForm()->create()->baseForm;
+    $zweite = Pokemon::factory()->withBaseForm()->create()->baseForm;
+
+    $this->actingAs($this->user)->postJson(route('collection.toggle', $erste));
+
+    $antwort = $this->actingAs($this->user)
+        ->postJson(route('collection.toggle', $zweite))
+        ->assertOk();
+
+    expect($antwort->json('orden'))->toBe([]);
+});
+
+it('drosselt die Registrierung', function () {
+    for ($i = 0; $i < 6; $i++) {
+        $this->post(route('register'), [
+            'name' => "Trainer {$i}",
+            'email' => "trainer{$i}@example.com",
+            'password' => 'geheim-genug-123',
+            'password_confirmation' => 'geheim-genug-123',
+        ]);
+        auth()->logout();
+    }
+
+    $this->post(route('register'), [
+        'name' => 'Einer zu viel',
+        'email' => 'zuviel@example.com',
+        'password' => 'geheim-genug-123',
+        'password_confirmation' => 'geheim-genug-123',
+    ])->assertStatus(429);
 });

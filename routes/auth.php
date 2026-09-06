@@ -15,7 +15,11 @@ Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    // Rate-Limiting auf der Registrierung (spec.md 7, Sicherheit). Der Login
+    // bringt seine eigene Drosselung im LoginRequest mit, die Registrierung
+    // nicht – ohne diese Zeile ließen sich beliebig viele Konten anlegen.
+    Route::post('register', [RegisteredUserController::class, 'store'])
+        ->middleware('throttle:6,1');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');

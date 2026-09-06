@@ -63,7 +63,7 @@
         </p>
     </footer>
 
-    {{-- Fehler- und XP-Meldungen aus den Alpine-Toggles --}}
+    {{-- Fehlermeldungen aus den Alpine-Toggles --}}
     <div x-data="{ meldung: '', sichtbar: false }"
          x-on:dex:fehler.window="meldung = $event.detail; sichtbar = true; setTimeout(() => sichtbar = false, 5000)"
          x-show="sichtbar"
@@ -71,6 +71,28 @@
          class="fixed bottom-4 left-1/2 z-50 -translate-x-1/2"
          role="alert">
         <div class="pixel-panel border-dex-danger px-4 py-2 text-sm" x-text="meldung"></div>
+    </div>
+
+    {{-- Neu freigeschaltete Orden (spec.md 2.9) --}}
+    <div x-data="{ orden: [] }"
+         x-on:dex:orden.window="orden = $event.detail; setTimeout(() => orden = [], 6000)"
+         x-show="orden.length > 0"
+         x-cloak
+         class="fixed bottom-4 right-4 z-50 space-y-2"
+         role="status"
+         aria-live="polite">
+        <template x-for="o in orden" :key="o.name">
+            <div class="pixel-panel border-dex-accent px-4 py-3 text-sm">
+                <p class="font-pixel text-[10px] uppercase text-dex-accent">Neuer Orden</p>
+                <p class="mt-1">
+                    <span x-text="o.icon" aria-hidden="true"></span>
+                    <span x-text="o.name"></span>
+                </p>
+                <p class="text-xs text-dex-muted">
+                    +<span x-text="o.xp"></span> XP
+                </p>
+            </div>
+        </template>
     </div>
 </body>
 </html>

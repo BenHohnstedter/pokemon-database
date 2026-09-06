@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\Achievement;
 use App\Models\Pokemon;
 use App\Models\PokemonForm;
 use App\Models\User;
 use App\Models\UserPokemonForm;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -17,7 +19,24 @@ use Illuminate\Support\Facades\DB;
  */
 class OwnershipService
 {
-    public function __construct(private readonly AchievementService $achievements) {}
+    /**
+     * Beim letzten Schreibvorgang neu freigeschaltete Orden.
+     * Das UI feiert sie mit Konfetti und Jingle (spec.md 2.9).
+     *
+     * @var Collection<int,Achievement>
+     */
+    private Collection $lastUnlocked;
+
+    public function __construct(private readonly AchievementService $achievements)
+    {
+        $this->lastUnlocked = collect();
+    }
+
+    /** @return Collection<int,Achievement> */
+    public function lastUnlockedAchievements(): Collection
+    {
+        return $this->lastUnlocked;
+    }
 
     /** @return bool  der neue Besitzstatus */
     public function toggle(User $user, PokemonForm $form, bool $shiny = false): bool
@@ -91,7 +110,7 @@ class OwnershipService
             // XP nur für die Einträge, die sich wirklich geändert haben –
             // ein zweiter Durchlauf derselben Liste darf nichts gutschreiben.
             $this->awardXpForBulk($user, $changedFormIds, $owned);
-            $this->achievements->sync($user->refresh());
+            $this->lastUnlocked = $this->achievements->sync($user->refresh());
         }
 
         return count($changedFormIds);
@@ -121,7 +140,7 @@ class OwnershipService
             $user->decrement('xp', min($xp, (int) ($user->xp ?? 0)));
         }
 
-        $this->achievements->sync($user->refresh());
+        $this->lastUnlocked = $this->achievements->sync($user->refresh());
     }
 
     /** XP-Vergabe nach Seltenheit und Schwierigkeit (spec.md 2.9). */

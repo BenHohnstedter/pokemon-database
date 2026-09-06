@@ -38,12 +38,23 @@ class CollectionController extends Controller
             default => $this->ownership->toggle($user, $form),
         };
 
+        $frisch = $user->fresh();
+
         if ($request->expectsJson()) {
             return response()->json([
                 'status' => $status,
                 'variante' => $variante,
-                'xp' => $user->fresh()->xp,
-                'level' => $user->fresh()->level(),
+                'xp' => $frisch->xp,
+                'level' => $frisch->level(),
+                // Neu freigeschaltete Orden lösen im UI Konfetti und Jingle aus
+                // (spec.md 2.9).
+                'orden' => $this->ownership->lastUnlockedAchievements()
+                    ->map(fn ($achievement) => [
+                        'name' => $achievement->name,
+                        'icon' => $achievement->icon,
+                        'xp' => $achievement->xp_reward,
+                    ])
+                    ->values(),
             ]);
         }
 
