@@ -36,7 +36,7 @@
                         <div class="w-full bg-dex-accent transition-all"
                              style="height: {{ max(2, ($anzahl / $verlaufMax) * 100) }}%"
                              title="{{ $monat }}: {{ $anzahl }}"></div>
-                        <span class="text-[9px] text-dex-muted">{{ substr($monat, 5, 2) }}</span>
+                        <span class="text-[11px] text-dex-muted">{{ substr($monat, 5, 2) }}</span>
                     </div>
                 @endforeach
             </div>

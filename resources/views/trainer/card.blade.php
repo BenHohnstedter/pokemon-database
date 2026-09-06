@@ -38,15 +38,15 @@
 
             <dl class="mt-5 grid grid-cols-3 gap-2 text-center">
                 <div class="pixel-panel-soft p-2">
-                    <dt class="text-[9px] uppercase text-dex-muted">Dex</dt>
+                    <dt class="text-[11px] uppercase text-dex-muted">Dex</dt>
                     <dd class="font-dex text-xl">{{ $basis->owned }}</dd>
                 </div>
                 <div class="pixel-panel-soft p-2">
-                    <dt class="text-[9px] uppercase text-dex-muted">Formen</dt>
+                    <dt class="text-[11px] uppercase text-dex-muted">Formen</dt>
                     <dd class="font-dex text-xl">{{ $regional->owned }}</dd>
                 </div>
                 <div class="pixel-panel-soft p-2">
-                    <dt class="text-[9px] uppercase text-dex-muted">Shiny</dt>
+                    <dt class="text-[11px] uppercase text-dex-muted">Shiny</dt>
                     <dd class="font-dex text-xl">{{ $shiny->owned }}</dd>
                 </div>
             </dl>
@@ -91,7 +91,7 @@
                             title="{{ $achievement->description }}">
                             <span class="block text-xl" aria-hidden="true">{{ $achievement->icon }}</span>
                             <span class="mt-1 block text-[10px] leading-tight">{{ $achievement->name }}</span>
-                            <span class="mt-1 block text-[9px] text-dex-muted">
+                            <span class="mt-1 block text-[11px] text-dex-muted">
                                 {{ $achievement->pivot->unlocked_at
                                     ? \Illuminate\Support\Carbon::parse($achievement->pivot->unlocked_at)->format('d.m.Y')
                                     : '' }}
