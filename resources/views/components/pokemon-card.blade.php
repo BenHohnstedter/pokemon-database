@@ -76,6 +76,7 @@
             <button type="button"
                     x-on:click="umschalten('normal')"
                     :disabled="busy"
+                    dusk="toggle-{{ $form->id }}"
                     class="pixel-button-ghost flex-1 justify-center py-1 text-[10px] disabled:opacity-50"
                     :class="owned ? 'border-dex-success text-dex-success' : ''">
                 <span x-text="owned ? '✔ Besitze ich' : 'Fehlt mir'"></span>

@@ -32,3 +32,7 @@ Thumbs.db
 /tests/Browser/console
 /tests/Browser/source
 /public/hot
+.env.dusk.local
+/tests/Browser/screenshots
+/tests/Browser/console
+/tests/Browser/source

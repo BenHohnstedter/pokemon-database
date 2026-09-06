@@ -11,7 +11,7 @@ use App\Models\Pokemon;
 final class MultiCatchStep
 {
     /**
-     * @param  Pokemon  $origin   die wild fangbare Vorstufe
+     * @param  Pokemon  $origin  die wild fangbare Vorstufe
      * @param  array<int,Pokemon>  $targets  Stufen, die aus diesen Exemplaren entstehen sollen,
      *                                       aufsteigend nach Entwicklungstiefe
      */

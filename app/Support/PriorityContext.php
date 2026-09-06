@@ -36,7 +36,7 @@ final class PriorityContext
     /** Kontext für nicht eingeloggte Besucher: kein Spielebesitz. */
     public static function guest(): self
     {
-        return new self();
+        return new self;
     }
 
     public function ownsGame(int $gameId): bool

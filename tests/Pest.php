@@ -2,7 +2,9 @@
 
 use App\Enums\PriorityLevel;
 use Database\Factories\PokemonFactory;
+use Illuminate\Foundation\Testing\DatabaseTruncation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\DuskTestCase;
 use Tests\TestCase;
 
 /*
@@ -22,6 +24,16 @@ pest()->extend(TestCase::class)
     // public/build – Tests sollen aber ohne vorherigen npm-Build laufen.
     ->beforeEach(fn () => $this->withoutVite())
     ->in('Feature', 'Unit');
+
+/*
+| Dusk läuft gegen einen echten Browser und damit gegen einen zweiten
+| PHP-Prozess. Eine In-Memory-Datenbank sähe der Browser nicht, und eine
+| Transaktion (RefreshDatabase) wäre für ihn unsichtbar – deshalb
+| DatabaseTruncation gegen die konfigurierte Testdatenbank.
+*/
+pest()->extend(DuskTestCase::class)
+    ->use(DatabaseTruncation::class)
+    ->in('Browser');
 
 /*
 |--------------------------------------------------------------------------

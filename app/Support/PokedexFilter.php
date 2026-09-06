@@ -17,14 +17,21 @@ use Illuminate\Support\Collection;
 final class PokedexFilter
 {
     public const STATUS_ALL = 'alle';
+
     public const STATUS_OWNED = 'besessen';
+
     public const STATUS_MISSING = 'fehlend';
+
     public const STATUS_FAVOURITES = 'wunschliste';
+
     public const STATUS_SHINY_MISSING = 'shiny-fehlend';
 
     public const SORT_DEX = 'dex';
+
     public const SORT_URGENCY = 'dringlichkeit';
+
     public const SORT_DIFFICULTY = 'schwierigkeit';
+
     public const SORT_NAME = 'name';
 
     public function __construct(

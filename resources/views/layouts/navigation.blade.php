@@ -54,7 +54,8 @@
                     </div>
 
                     <div x-data="{ auf: false }" class="relative">
-                        <button type="button" x-on:click="auf = ! auf" class="pixel-button-ghost">
+                        <button type="button" x-on:click="auf = ! auf" dusk="user-menu"
+                                class="pixel-button-ghost">
                             {{ Str::limit(auth()->user()->name, 14) }} ▾
                         </button>
 

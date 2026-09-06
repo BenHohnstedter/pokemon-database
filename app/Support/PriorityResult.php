@@ -11,8 +11,8 @@ use App\Enums\PriorityLevel;
 final class PriorityResult
 {
     /**
-     * @param  array<int,string>  $routes   Konkrete Handlungsanweisungen fürs UI
-     * @param  array<int,string>  $consoles Benoetigte Konsolen, deduped
+     * @param  array<int,string>  $routes  Konkrete Handlungsanweisungen fürs UI
+     * @param  array<int,string>  $consoles  Benoetigte Konsolen, deduped
      */
     public function __construct(
         public readonly PriorityLevel $level,

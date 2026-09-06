@@ -19,7 +19,7 @@ use Illuminate\Support\Collection;
 class MultiCatchCalculator
 {
     /**
-     * @param  Collection<int,Pokemon>  $line     alle Stufen der Entwicklungslinie
+     * @param  Collection<int,Pokemon>  $line  alle Stufen der Entwicklungslinie
      * @param  array<int,int>  $ownedDexNumbers  bereits besessene Dex-Nummern
      */
     public function plan(Collection $line, array $ownedDexNumbers = []): MultiCatchPlan
@@ -27,7 +27,7 @@ class MultiCatchCalculator
         $byId = $line->keyBy('id');
         $owned = array_flip($ownedDexNumbers);
 
-        /** @var array<int,array<int,Pokemon>> $grouped  origin-id => fehlende Stufen */
+        /** @var array<int,array<int,Pokemon>> $grouped origin-id => fehlende Stufen */
         $grouped = [];
         $unreachable = [];
 

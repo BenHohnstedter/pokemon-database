@@ -5,6 +5,8 @@
  * (spec.md 2.2, 2.6, 2.9, 2.10).
  */
 
+use App\Models\Friendship;
+use App\Models\Game;
 use App\Models\Obtainability;
 use App\Models\Pokemon;
 use App\Models\PokemonForm;
@@ -41,7 +43,7 @@ it('nennt auf dem Dashboard die Zahl der Bank-kritischen Pokémon', function () 
     $dringend = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Bankfall']);
     Obtainability::factory()->create([
         'pokemon_id' => $dringend->id,
-        'game_id' => \App\Models\Game::where('slug', 'black')->value('id'),
+        'game_id' => Game::where('slug', 'black')->value('id'),
     ]);
 
     $this->actingAs($this->user)
@@ -67,7 +69,7 @@ it('zeigt die Einstellungsseite mit der Spieleliste', function () {
 
 it('speichert Spielebesitz, GO-Region und Zähl-Toggles', function () {
     $this->seed(GameSeeder::class);
-    $spiel = \App\Models\Game::where('slug', 'sword')->first();
+    $spiel = Game::where('slug', 'sword')->first();
 
     $this->actingAs($this->user)
         ->patch(route('settings.update'), [
@@ -171,7 +173,7 @@ it('schickt eine Freundschaftsanfrage und nimmt sie an', function () {
         ->post(route('friends.add'), ['email' => $freund->email])
         ->assertSessionHas('status');
 
-    $anfrage = \App\Models\Friendship::first();
+    $anfrage = Friendship::first();
     expect($anfrage->status)->toBe('pending');
 
     $this->actingAs($freund)
@@ -186,7 +188,7 @@ it('verhindert das Bestätigen fremder Anfragen', function () {
     $freund = User::factory()->create();
     $dritter = User::factory()->create();
 
-    $anfrage = \App\Models\Friendship::create([
+    $anfrage = Friendship::create([
         'user_id' => $this->user->id,
         'friend_id' => $freund->id,
         'status' => 'pending',

@@ -1,59 +1,201 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Dex-Rescue — Pokémon-Sammlungs-Tracker
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Web-App, die trackt, welche Pokémon in **Pokémon HOME** schon im Bestand sind und wie die
+fehlenden noch zu bekommen sind — mit einer Priorisierung, die die Abschaltung von
+**Pokémon Bank am 26./27. Februar 2027** berücksichtigt.
 
-## About Laravel
+Der Kernnutzen: *Zeig mir auf einen Blick, was ich besitze, was mir fehlt, und — ganz wichtig —
+was davon eine tickende Uhr hat.*
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+> Privates, nicht-kommerzielles Fan-Projekt. Pokémon-Namen, -Sprites und -Artworks gehören
+> Nintendo / Game Freak / The Pokémon Company. Daten über die [PokéAPI](https://pokeapi.co/),
+> ergänzt um Angaben aus [Bulbapedia](https://bulbapedia.bulbagarden.net/) (CC BY-NC-SA).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Was die App kann
 
-## Learning Laravel
+| Bereich | Kurz |
+|---|---|
+| **Pokédex** | Alle Arten mit deutschen Namen, Typen, Artwork, Shiny-Sprite und Entwicklungskette |
+| **Prioritäts-Engine** | Sechs Dringlichkeitsstufen von 🟢 *einfach* bis 🔴 *Bank-Deadline*, berechnet aus Spielebesitz, GO-Region und den echten Transferwegen nach HOME |
+| **Bezugsquellen** | Pro Pokémon: welches Spiel, welche Methode, welche Route, welcher Weg nach HOME |
+| **Mehrfach-Fang** | „Fange 3× Bisasam: 1× so lassen, 1× zu Bisaknosp entwickeln …" — für Stufen, die nur durch Entwicklung erreichbar sind |
+| **Formen** | Regionalformen und Shiny als eigene Fortschrittsbalken, per Einstellung in den Hauptbalken einrechenbar |
+| **Pokémon GO** | Regionalexklusivität gegen die eigene Weltregion abgeglichen; ein GO-Weg entschärft die Bank-Deadline |
+| **Masseneingabe** | `1-50,60-63,700` als Freitext, mit Vorschau vor dem Übernehmen |
+| **Gamification** | Trainer-Level, Orden, Trainerkarte im GameBoy-Stil, 8-Bit-Sounds, optionaler Chiptune-Loop |
+| **Statistik & Social** | Fortschritt nach Typ/Generation, Zuwachs pro Monat, Bestenliste mit Freundesliste |
+| **PWA** | Auf dem Handy als App installierbar |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Die vollständige Spezifikation steht in [`.claude/SPEC.md`](.claude/SPEC.md), der Arbeitsstand in
+[`.claude/PROGRESS.md`](.claude/PROGRESS.md).
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## Setup unter XAMPP
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Vorausgesetzt sind **PHP ≥ 8.2**, **MySQL/MariaDB**, **Composer** und **Node.js ≥ 18**.
+Unter XAMPP liegt PHP in `E:\xampp\php` — dieser Ordner sollte im `PATH` stehen.
 
-### Premium Partners
+```bash
+git clone https://github.com/BenHohnstedter/pokemon-database.git
+cd pokemon-database
+composer install
+cp .env.example .env
+php artisan key:generate
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Datenbank anlegen (z.B. in phpMyAdmin oder auf der Konsole):
 
-## Contributing
+```sql
+CREATE DATABASE pokemon_database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Zugangsdaten in der `.env` eintragen (unter XAMPP meist `root` ohne Passwort), dann:
 
-## Code of Conduct
+```bash
+php artisan migrate
+php artisan db:seed
+npm install
+npm run build
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Daten importieren
 
-## Security Vulnerabilities
+Der Import läuft in drei Schritten und ist **wiederholbar** — ein zweiter Lauf aktualisiert
+vorhandene Datensätze, statt Duplikate anzulegen. Antworten der PokéAPI werden auf Platte
+gecacht, ein erneuter Lauf ist deshalb deutlich schneller.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan pokedex:import
+```
 
-## License
+```bash
+php artisan pokedex:import-encounters
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan pokedex:recalculate
+```
+
+Für einen schnellen Testlauf reicht ein Ausschnitt:
+
+```bash
+php artisan pokedex:import --to=151 && php artisan pokedex:import-encounters --to=151 && php artisan pokedex:recalculate
+```
+
+Nützliche Optionen:
+
+| Befehl | Wozu |
+|---|---|
+| `pokedex:import --from= --to= --limit=` | Nur einen Dex-Ausschnitt laden |
+| `pokedex:import --include-other-forms` | Auch Sonderformen jenseits der Regionalformen anlegen |
+| `pokedex:import --fresh-cache` | Plattencache leeren und alles neu abrufen |
+| `pokedex:import-encounters --translate-locations` | Deutsche Ortsnamen mitladen (deutlich mehr Requests) |
+| `pokedex:import-sources datei.csv` | Kuratierte Bezugsquellen aus CSV nachladen |
+| `pokedex:import-go datei.csv` | GO-Verfügbarkeit und Regionalexklusive aus CSV nachladen |
+| `pokedex:icons` | PWA-Icons neu erzeugen |
+| `pokedex:demo-user --besitz=200` | Lokalen Testnutzer mit generiertem Passwort anlegen |
+
+### Starten
+
+```bash
+php artisan serve
+```
+
+Alternativ per XAMPP-VHost auf `public/` zeigen. Läuft die App in einem Unterordner
+(`http://localhost/pokemon-database/public`), gehört genau diese Adresse in `APP_URL`.
+
+---
+
+## Tests
+
+```bash
+php artisan test
+```
+
+Die Unit- und Feature-Tests laufen gegen SQLite in-memory und brauchen weder MySQL noch einen
+Asset-Build.
+
+Die Browser-Tests (Dusk) brauchen beides plus einen laufenden Server:
+
+```bash
+cp .env.dusk.local.example .env.dusk.local
+```
+
+```bash
+npm run build && php artisan serve
+```
+
+```bash
+php artisan dusk
+```
+
+> Dusk **leert** die in `.env.dusk.local` konfigurierte Datenbank bei jedem Lauf — dort niemals
+> die Entwicklungsdatenbank eintragen.
+
+---
+
+## Aufbau
+
+```
+app/
+├── Console/Commands/   Import- und Wartungsbefehle
+├── Enums/              Dringlichkeit, Schwierigkeit, Methoden, Regionen, Plattformen
+├── Http/Controllers/   Pokédex, Sammlung, Dashboard, Einstellungen, Statistik, Trainerkarte
+├── Listeners/          Login-Streak
+├── Models/             Eloquent-Modelle
+├── Services/           Prioritäts-Engine, Fortschritt, Mehrfach-Fang, Import, Achievements
+└── Support/            Wertobjekte (PriorityResult, ProgressBar, Filter …)
+
+database/
+├── migrations/         Schema
+├── factories/          Test-Factories mit sprechenden States
+└── seeders/            Kuratierte Stammdaten (Spiele, Typen, Orden, GO-Regionalexklusive)
+
+resources/
+├── css/app.css         Retro-Theme mit vier Farbpaletten über CSS-Variablen
+├── js/                 Alpine-Komponenten und 8-Bit-Audio per Web Audio API
+└── views/              Blade-Templates
+```
+
+### Wie die Dringlichkeitsstufe entsteht
+
+Die Logik steckt in [`app/Services/PriorityEngine.php`](app/Services/PriorityEngine.php) und ist
+der am dichtesten getestete Teil der App. Entscheidend sind drei Flags am Spiel:
+
+- `home_compatible` — hängt direkt an Pokémon HOME
+- `bank_only` — der einzige Weg nach HOME führt über Pokémon Bank
+- `still_purchasable` — noch regulär im Handel erhältlich
+
+Daraus ergibt sich:
+
+| Stufe | Bedingung |
+|---|---|
+| ✅ Besessen | im Bestand |
+| 🟢 Einfach | in einem besessenen Spiel, oder in GO in der eigenen Region farmbar |
+| 🟡 Kaufbar | nur in einem nicht besessenen Spiel, das noch im Handel ist |
+| 🟠 Alte Hardware | altes Spiel nötig, aber es gibt einen Weg ohne Bank (z.B. über GO) |
+| 🔴 Bank-Deadline | der einzige Weg nach HOME führt über Pokémon Bank |
+| ⚪ Tausch/Community | Event vorbei oder kein regulärer Fangweg mehr |
+
+Fehlen für ein Pokémon die GO-Daten, rechnet die Engine **bewusst konservativ** ohne
+GO-Rettungsweg — bei einer Deadline ist eine Warnung zu viel besser als eine zu wenig.
+
+---
+
+## Datenstand und offene Punkte
+
+- Die Spieleliste in `GameSeeder` und die GO-Regionalexklusiven in `GoAvailabilitySeeder` sind
+  kuratiert und sollten gegen Bulbapedia/Serebii gegengeprüft werden — besonders das Flag
+  `still_purchasable` und Titel, die nach dem Projektstart erschienen sind.
+- Der GO-Datensatz ist bewusst ein belastbarer Kern, kein Vollbestand; Ergänzungen gehören per
+  `pokedex:import-go` aus einer gepflegten CSV nachgeladen.
+
+---
+
+## Lizenz und Nutzung
+
+Privates Fan-Projekt ohne kommerzielle Absicht. Nicht als offizielles Produkt ausgeben,
+nicht verkaufen.

@@ -4,7 +4,6 @@
  * Pokédex-Ansicht, Filter und Detailseite (spec.md 2.1–2.3, 2.7, 2.8).
  */
 
-use App\Enums\FormType;
 use App\Models\Obtainability;
 use App\Models\Pokemon;
 use App\Models\PokemonForm;

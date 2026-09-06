@@ -1,0 +1,155 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Pest (Unit & Feature)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PHP einrichten
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_sqlite, pdo_mysql, gd, intl, zip, bcmath
+          coverage: none
+
+      - name: Composer-Cache
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Abhängigkeiten installieren
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Umgebung vorbereiten
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Tests
+        # Läuft gegen SQLite in-memory (siehe phpunit.xml) und braucht deshalb
+        # weder eine MySQL-Instanz noch einen Asset-Build.
+        run: php artisan test
+
+  lint:
+    name: Code-Stil (Pint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Pint
+        run: vendor/bin/pint --test
+
+  assets:
+    name: Frontend-Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Build-Ergebnis für die Browsertests sichern
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: public/build
+          retention-days: 1
+
+  dusk:
+    name: Dusk (End-to-End)
+    runs-on: ubuntu-latest
+    needs: assets
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: pokemon_database_dusk
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_mysql, gd, intl, zip, bcmath
+          coverage: none
+
+      - run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Gebaute Assets holen
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+          path: public/build
+
+      - name: Umgebung vorbereiten
+        run: |
+          cp .env.dusk.local.example .env.dusk.local
+          cp .env.example .env
+          php artisan key:generate
+          php artisan key:generate --env=dusk.local
+
+      - name: Datenbank migrieren
+        env:
+          DB_DATABASE: pokemon_database_dusk
+        run: php artisan migrate --force
+
+      - name: ChromeDriver aktualisieren
+        run: php artisan dusk:chrome-driver --detect
+
+      - name: Server starten
+        run: php artisan serve --no-reload &
+
+      - name: Warten, bis der Server antwortet
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8000 > /dev/null && exit 0
+            sleep 1
+          done
+          echo "Server ist nicht hochgekommen"; exit 1
+
+      - name: Dusk
+        run: php artisan dusk
+
+      - name: Screenshots bei Fehlschlag sichern
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dusk-screenshots
+          path: tests/Browser/screenshots

@@ -115,7 +115,7 @@ class RecalculateDerivedDataCommand extends Command
      *
      * @param  Collection<int,Pokemon>  $all
      * @param  array<int,bool>  $hasDirect
-     * @return array{0:int|null,1:int}  [source_pokemon_id, Anzahl Entwicklungsschritte]
+     * @return array{0:int|null,1:int} [source_pokemon_id, Anzahl Entwicklungsschritte]
      */
     private function resolveSource(Pokemon $pokemon, Collection $all, array $hasDirect): array
     {

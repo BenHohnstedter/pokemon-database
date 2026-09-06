@@ -16,6 +16,7 @@ use App\Services\PriorityEngine;
 use App\Support\EvolutionFallback;
 use App\Support\PriorityContext;
 use Database\Factories\GameFactory;
+use Illuminate\Support\Collection;
 
 beforeEach(function () {
     resetDexSequence();
@@ -29,7 +30,7 @@ function form(array $attributes = []): PokemonForm
 }
 
 /** Bezugsquellen einer Form, so wie die Engine sie erwartet (mit game-Relation). */
-function sources(PokemonForm $form): Illuminate\Support\Collection
+function sources(PokemonForm $form): Collection
 {
     return Obtainability::query()
         ->with('game')

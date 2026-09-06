@@ -164,7 +164,7 @@ class ProgressService
      * Zeitlicher Verlauf: wie viele Pokémon pro Monat dazugekommen sind
      * (spec.md 2.10).
      *
-     * @return array<string,int>  "2026-09" => 42
+     * @return array<string,int> "2026-09" => 42
      */
     public function monthlyTimeline(User $user, int $months = 12): array
     {

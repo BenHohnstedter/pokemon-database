@@ -53,7 +53,7 @@ class OwnershipService
      * bewusst nicht per Nummernliste überschrieben.
      *
      * @param  array<int,int>  $dexNumbers
-     * @return int  Anzahl tatsächlich geänderter Einträge
+     * @return int Anzahl tatsächlich geänderter Einträge
      */
     public function bulkSet(User $user, array $dexNumbers, bool $owned): int
     {

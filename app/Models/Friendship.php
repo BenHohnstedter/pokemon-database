@@ -11,6 +11,7 @@ class Friendship extends Model
     use HasFactory;
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_ACCEPTED = 'accepted';
 
     protected $fillable = ['user_id', 'friend_id', 'status'];
