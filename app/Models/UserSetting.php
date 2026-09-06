@@ -22,7 +22,7 @@ class UserSetting extends Model
     protected $fillable = [
         'user_id', 'go_region',
         'count_regional_in_total', 'count_shiny_in_total',
-        'owns_3ds', 'owns_switch', 'theme',
+        'owns_3ds', 'owns_switch', 'theme', 'per_page',
         'sound_effects_enabled', 'music_enabled', 'music_volume', 'reduce_motion',
     ];
 
@@ -31,6 +31,7 @@ class UserSetting extends Model
         'count_regional_in_total' => false,
         'count_shiny_in_total' => false,
         'theme' => 'default',
+        'per_page' => 60,
         'sound_effects_enabled' => true,
         'music_enabled' => false,
         'music_volume' => 35,

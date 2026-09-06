@@ -14,6 +14,13 @@ final class PriorityResult
      * @param  array<int,string>  $routes  Konkrete Handlungsanweisungen fürs UI
      * @param  array<int,string>  $consoles  Benoetigte Konsolen, deduped
      */
+    /**
+     * @param  bool  $bankDeadline  Führt der Weg, den dieser Nutzer gehen würde,
+     *                              über Pokémon Bank? Bewusst unabhängig von der
+     *                              Stufe: wer das passende Spiel besitzt, kommt
+     *                              zwar leicht an das Pokémon – muss es aber
+     *                              trotzdem vor dem Stichtag übertragen.
+     */
     public function __construct(
         public readonly PriorityLevel $level,
         public readonly Difficulty $difficulty,
@@ -22,11 +29,31 @@ final class PriorityResult
         public readonly array $consoles = [],
         public readonly bool $goRescuable = false,
         public readonly bool $obtainableAtAll = true,
+        public readonly bool $bankDeadline = false,
     ) {}
 
+    /** Stufe 🔴: alte Hardware nötig UND nur über Bank erreichbar. */
     public function isUrgent(): bool
     {
         return $this->level->isBankCritical();
+    }
+
+    /**
+     * Hängt an der Bank-Abschaltung – egal auf welcher Stufe.
+     * Speist Countdown-Widget und Deadline-Filter (spec.md 2.7).
+     */
+    public function affectedByBankDeadline(): bool
+    {
+        return $this->bankDeadline;
+    }
+
+    /**
+     * Betroffen, aber der Nutzer kann es sofort selbst holen: das Spiel ist da,
+     * es fehlt nur die Übertragung vor dem Stichtag.
+     */
+    public function bankDeadlineButReachable(): bool
+    {
+        return $this->bankDeadline && $this->level === PriorityLevel::Easy;
     }
 
     /**
@@ -52,6 +79,7 @@ final class PriorityResult
             'consoles' => $this->consoles,
             'go_rescuable' => $this->goRescuable,
             'obtainable_at_all' => $this->obtainableAtAll,
+            'bank_deadline' => $this->bankDeadline,
         ];
     }
 }

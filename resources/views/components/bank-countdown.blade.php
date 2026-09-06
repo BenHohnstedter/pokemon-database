@@ -33,9 +33,9 @@
     </div>
 
     @if ($betroffen > 0 && ! $deadline->hasPassed())
-        <a href="{{ route('pokedex.index', ['prio' => 'bank_urgent', 'status' => 'fehlend', 'sortierung' => 'dringlichkeit']) }}"
+        <a href="{{ route('pokedex.index', ['deadline' => 1, 'status' => 'fehlend', 'sortierung' => 'dringlichkeit']) }}"
            class="pixel-button mt-4 w-full">
-            Dringende Fälle ansehen
+            Alle betroffenen ansehen
         </a>
     @elseif (! $deadline->hasPassed())
         <p class="mt-3 text-xs text-dex-success">

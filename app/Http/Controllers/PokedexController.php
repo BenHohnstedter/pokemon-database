@@ -38,6 +38,7 @@ class PokedexController extends Controller
         return view('pokedex.index', [
             'paginator' => $this->paginate($filtered, $request),
             'filter' => $filter,
+            'proSeite' => $this->perPageFor($request, $filter),
             'gesamt' => $rows->count(),
             'gefunden' => $filtered->count(),
             'typen' => Type::orderBy('name_de')->get(),
@@ -130,12 +131,28 @@ class PokedexController extends Controller
     }
 
     /**
+     * Einträge pro Seite: Query-Parameter schlägt Nutzereinstellung schlägt
+     * Standardwert. So lässt sich die Größe einmal dauerhaft setzen und
+     * trotzdem pro Aufruf abweichen.
+     */
+    private function perPageFor(Request $request, PokedexFilter $filter): int
+    {
+        if ($filter->perPage !== null) {
+            return $filter->perPage;
+        }
+
+        $gespeichert = $request->user()?->settingsOrDefault()->per_page;
+
+        return $gespeichert ?: (int) config('pokedex.per_page', 60);
+    }
+
+    /**
      * Manuelle Pagination, weil die Sammlung bereits im Speicher liegt –
      * anders lässt sich nicht nach Dringlichkeit sortieren (siehe PokedexQuery).
      */
     private function paginate(Collection $rows, Request $request): LengthAwarePaginator
     {
-        $perPage = (int) config('pokedex.per_page', 60);
+        $perPage = $this->perPageFor($request, PokedexFilter::fromRequest($request));
         $page = max(1, (int) $request->query('page', 1));
 
         $seite = $rows->forPage($page, $perPage)->values();

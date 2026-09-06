@@ -224,3 +224,64 @@ it('zeigt einen Hinweis, wenn noch keine Daten importiert wurden', function () {
         ->assertOk()
         ->assertSee('pokedex:import');
 });
+
+it('filtert auf alles, was an der Bank-Deadline hängt – auch das selbst Holbare', function () {
+    $meins = GameFactory::new()->bankOnly()->create();
+    $this->user->games()->attach($meins);
+
+    $selbstHolbar = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Selbstholbar']);
+    Obtainability::factory()->create(['pokemon_id' => $selbstHolbar->id, 'game_id' => $meins->id]);
+
+    $fehltSpiel = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Spielfehlt']);
+    Obtainability::factory()->create([
+        'pokemon_id' => $fehltSpiel->id,
+        'game_id' => GameFactory::new()->bankOnly()->create()->id,
+    ]);
+
+    $ohneFrist = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Entspannt']);
+    Obtainability::factory()->create([
+        'pokemon_id' => $ohneFrist->id,
+        'game_id' => GameFactory::new()->modern()->create()->id,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('pokedex.index', ['deadline' => 1]))
+        ->assertOk()
+        ->assertSee('Selbstholbar')
+        ->assertSee('Spielfehlt')
+        ->assertDontSee('Entspannt');
+});
+
+it('respektiert die gewählte Seitengröße', function () {
+    Pokemon::factory()->withBaseForm()->count(40)->create();
+
+    $this->actingAs($this->user)
+        ->get(route('pokedex.index', ['pro_seite' => 30]))
+        ->assertOk()
+        ->assertSee('page=2');
+
+    $this->actingAs($this->user)
+        ->get(route('pokedex.index', ['pro_seite' => 60]))
+        ->assertOk()
+        ->assertDontSee('page=2');
+});
+
+it('nimmt die Seitengröße aus den Einstellungen, wenn keine im Link steht', function () {
+    Pokemon::factory()->withBaseForm()->count(40)->create();
+    $this->user->settingsOrDefault()->update(['per_page' => 30]);
+
+    $this->actingAs($this->user->fresh())
+        ->get(route('pokedex.index'))
+        ->assertOk()
+        ->assertSee('page=2');
+});
+
+it('ignoriert eine unsinnige Seitengröße', function () {
+    Pokemon::factory()->withBaseForm()->count(40)->create();
+
+    // 99999 steht nicht in den erlaubten Werten – es bleibt beim Standard.
+    $this->actingAs($this->user)
+        ->get(route('pokedex.index', ['pro_seite' => 99999]))
+        ->assertOk()
+        ->assertDontSee('page=2');
+});

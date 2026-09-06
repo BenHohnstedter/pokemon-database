@@ -34,6 +34,9 @@ final class PokedexFilter
 
     public const SORT_NAME = 'name';
 
+    /** Auswählbare Seitengrößen (spec.md 7, Performance). */
+    public const PER_PAGE_OPTIONS = [30, 60, 120, 240];
+
     public function __construct(
         public readonly string $search = '',
         public readonly ?int $generation = null,
@@ -42,7 +45,9 @@ final class PokedexFilter
         public readonly ?Difficulty $difficulty = null,
         public readonly string $status = self::STATUS_ALL,
         public readonly bool $onlyUnreachable = false,
+        public readonly bool $onlyBankDeadline = false,
         public readonly string $sort = self::SORT_DEX,
+        public readonly ?int $perPage = null,
     ) {}
 
     public static function fromRequest(Request $request): self
@@ -55,8 +60,18 @@ final class PokedexFilter
             difficulty: Difficulty::tryFrom((string) $request->query('schwierigkeit')),
             status: (string) $request->query('status', self::STATUS_ALL),
             onlyUnreachable: $request->boolean('unerreichbar'),
+            onlyBankDeadline: $request->boolean('deadline'),
             sort: (string) $request->query('sortierung', self::SORT_DEX),
+            perPage: self::gueltigeSeitengroesse($request->query('pro_seite')),
         );
+    }
+
+    /** Nur die angebotenen Größen zulassen – sonst könnte man 100.000 anfordern. */
+    private static function gueltigeSeitengroesse(mixed $wert): ?int
+    {
+        $zahl = (int) $wert;
+
+        return in_array($zahl, self::PER_PAGE_OPTIONS, true) ? $zahl : null;
     }
 
     /**
@@ -96,6 +111,11 @@ final class PokedexFilter
 
         // "Zeig mir alles, was ich mit meinem Spielebesitz gar nicht bekommen kann" (spec.md 2.8)
         if ($this->onlyUnreachable && $row->priority->reachableWithCurrentGames()) {
+            return false;
+        }
+
+        // Alles, was an der Bank-Frist hängt – auch das, was Du selbst holen kannst.
+        if ($this->onlyBankDeadline && ! $row->priority->affectedByBankDeadline()) {
             return false;
         }
 
@@ -159,6 +179,7 @@ final class PokedexFilter
             || $this->priority !== null
             || $this->difficulty !== null
             || $this->onlyUnreachable
+            || $this->onlyBankDeadline
             || $this->status !== self::STATUS_ALL
             || $this->sort !== self::SORT_DEX;
     }
@@ -174,7 +195,9 @@ final class PokedexFilter
             'schwierigkeit' => $this->difficulty?->value,
             'status' => $this->status !== self::STATUS_ALL ? $this->status : null,
             'unerreichbar' => $this->onlyUnreachable ? 1 : null,
+            'deadline' => $this->onlyBankDeadline ? 1 : null,
             'sortierung' => $this->sort !== self::SORT_DEX ? $this->sort : null,
+            'pro_seite' => $this->perPage,
         ], fn ($v) => $v !== null);
     }
 

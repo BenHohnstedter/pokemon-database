@@ -386,3 +386,87 @@ it('lässt die Schwierigkeit nie unter den Wert am Pokémon fallen', function ()
     expect($result->difficulty)->toBe(Difficulty::SehrSchwer)
         ->and($result)->toHavePriority(PriorityLevel::Purchasable);
 });
+
+it('meldet die Bank-Frist auch dann, wenn der Nutzer das Spiel besitzt', function () {
+    // Der Fall, der vorher komplett aus dem Countdown verschwand: Du kommst
+    // problemlos an das Pokémon, musst es aber trotzdem über Bank übertragen.
+    $form = form();
+    $meins = GameFactory::new()->bankOnly()->create();
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $meins->id]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext(ownedGameIds: [$meins->id]),
+        owned: false,
+        obtainabilities: sources($form),
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::Easy)
+        ->and($result->affectedByBankDeadline())->toBeTrue()
+        ->and($result->bankDeadlineButReachable())->toBeTrue()
+        // Die Stufe bleibt grün – 🔴 heißt weiterhin "Dir fehlt noch etwas".
+        ->and($result->isUrgent())->toBeFalse()
+        ->and($result->reason)->toContain('Vor der Abschaltung');
+});
+
+it('meldet keine Bank-Frist, wenn das besessene Spiel direkt an HOME hängt', function () {
+    $form = form();
+    $meins = GameFactory::new()->modern()->create();
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $meins->id]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext(ownedGameIds: [$meins->id]),
+        owned: false,
+        obtainabilities: sources($form),
+    );
+
+    expect($result->affectedByBankDeadline())->toBeFalse();
+});
+
+it('meldet keine Bank-Frist, wenn eines der besessenen Spiele ohne Bank auskommt', function () {
+    $form = form();
+    $alt = GameFactory::new()->bankOnly()->create();
+    $neu = GameFactory::new()->modern()->create();
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $alt->id]);
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $neu->id]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext(ownedGameIds: [$alt->id, $neu->id]),
+        owned: false,
+        obtainabilities: sources($form),
+    );
+
+    expect($result->affectedByBankDeadline())->toBeFalse();
+});
+
+it('hebt die Bank-Frist auf, wenn GO das Pokémon führt', function () {
+    $form = form();
+    $meins = GameFactory::new()->bankOnly()->create();
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $meins->id]);
+    $go = GoAvailability::factory()->create(['pokemon_id' => $form->pokemon_id]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext(ownedGameIds: [$meins->id]),
+        owned: false,
+        obtainabilities: sources($form),
+        go: $go,
+    );
+
+    expect($result->affectedByBankDeadline())->toBeFalse();
+});
+
+it('markiert 🔴 weiterhin als von der Frist betroffen', function () {
+    $form = form();
+    $game = GameFactory::new()->bankOnly()->create();
+    Obtainability::factory()->create(['pokemon_id' => $form->pokemon_id, 'game_id' => $game->id]);
+
+    $result = $this->engine->evaluate($form, new PriorityContext, owned: false, obtainabilities: sources($form));
+
+    expect($result)->toHavePriority(PriorityLevel::BankUrgent)
+        ->and($result->affectedByBankDeadline())->toBeTrue()
+        // Diese Gruppe kann man NICHT selbst holen – dafür fehlt das Spiel.
+        ->and($result->bankDeadlineButReachable())->toBeFalse();
+});

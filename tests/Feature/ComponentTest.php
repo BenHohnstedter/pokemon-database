@@ -230,7 +230,7 @@ it('zeigt die verbleibenden Tage und die Zahl der betroffenen Pokémon', functio
     expect($html)->toContain('Noch 10 Tage')
         ->toContain('42')
         ->toContain('26.02.2027')
-        ->toContain('Dringende Fälle ansehen');
+        ->toContain('Alle betroffenen ansehen');
 });
 
 it('feiert, wenn kein Pokémon mehr an der Deadline hängt', function () {
@@ -243,7 +243,7 @@ it('feiert, wenn kein Pokémon mehr an der Deadline hängt', function () {
     );
 
     expect($html)->toContain('Kein Pokémon hängt mehr an der Bank-Deadline')
-        ->not->toContain('Dringende Fälle ansehen');
+        ->not->toContain('Alle betroffenen ansehen');
 });
 
 it('meldet die Frist als abgelaufen', function () {
@@ -256,5 +256,30 @@ it('meldet die Frist als abgelaufen', function () {
     );
 
     expect($html)->toContain('Pokémon Bank ist abgeschaltet')
-        ->not->toContain('Dringende Fälle ansehen');
+        ->not->toContain('Alle betroffenen ansehen');
+});
+
+it('rendert genau ein class-Attribut am Kartenrahmen', function () {
+    $pokemon = Pokemon::factory()->withBaseForm()->create();
+
+    // Zwei class-Attribute nebeneinander verwirft der Browser stillschweigend –
+    // in der Gast-Ansicht fehlte dadurch die komplette Basis-Optik.
+    foreach ([false, true] as $interaktiv) {
+        if ($interaktiv) {
+            $this->actingAs(User::factory()->create());
+        }
+
+        $html = Blade::render(
+            '<x-pokemon-card :row="$row" :interactive="$i" />',
+            ['row' => karteZeile($pokemon->baseForm), 'i' => $interaktiv]
+        );
+
+        $rahmen = substr($html, 0, strpos($html, '>') + 1);
+
+        expect(substr_count($rahmen, ' class='))->toBe(
+            1,
+            'Kartenrahmen hat mehr als ein class-Attribut ('.($interaktiv ? 'eingeloggt' : 'Gast').')'
+        )
+            ->and($rahmen)->toContain('dex-card');
+    }
 });

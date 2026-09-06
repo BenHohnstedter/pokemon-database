@@ -49,7 +49,7 @@ it('nennt auf dem Dashboard die Zahl der Bank-kritischen Pokémon', function () 
     $this->actingAs($this->user)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertSee('Vor der Bank-Abschaltung erledigen');
+        ->assertSee('Dafür fehlt Dir noch Spiel oder Konsole');
 });
 
 it('leitet Gäste vom Dashboard zum Login', function () {

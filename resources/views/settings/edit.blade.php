@@ -125,6 +125,19 @@
                 </select>
             </label>
 
+            <label for="per_page" class="mt-4 block text-sm">
+                <span class="mb-1 block text-xs uppercase text-dex-muted">Pokémon pro Seite</span>
+                <select id="per_page" name="per_page" class="pixel-input max-w-sm">
+                    @foreach (\App\Support\PokedexFilter::PER_PAGE_OPTIONS as $wert)
+                        <option value="{{ $wert }}" @selected($settings->per_page === $wert)>{{ $wert }}</option>
+                    @endforeach
+                </select>
+                <span class="mt-1 block text-xs text-dex-muted">
+                    Gilt für das Pokédex-Raster. Mehr pro Seite heißt weniger Blättern,
+                    aber längere Ladezeit.
+                </span>
+            </label>
+
             <div class="mt-5 space-y-3 text-sm">
                 <label class="flex items-center gap-3">
                     <input type="checkbox" name="sound_effects_enabled" value="1"

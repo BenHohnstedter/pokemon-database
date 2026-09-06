@@ -96,13 +96,26 @@ class PriorityEngine
         );
 
         if ($ownedGameSources->isNotEmpty()) {
+            /*
+            | Wichtig: "einfach" heißt nur, dass Du drankommst – nicht, dass es
+            | entspannt ist. Wer Pokémon Schwarz besitzt, fängt das Pokémon
+            | jederzeit, muss es aber trotzdem vor dem Stichtag über Pokémon Bank
+            | nach HOME schieben. Diese Fälle verschwanden vorher komplett aus dem
+            | Countdown, obwohl sie genauso an der Frist hängen.
+            */
+            $deadline = $this->requiresBank($ownedGameSources, $go);
+
             return new PriorityResult(
                 level: PriorityLevel::Easy,
                 difficulty: $this->difficultyFrom($ownedGameSources, $evolutionSteps),
-                reason: 'Du besitzt bereits ein Spiel, in dem es vorkommt.',
+                reason: $deadline
+                    ? 'Du besitzt ein passendes Spiel – der Weg nach HOME führt aber über '
+                        .'Pokémon Bank. Vor der Abschaltung übertragen!'
+                    : 'Du besitzt bereits ein Spiel, in dem es vorkommt.',
                 routes: $this->routeLabels($ownedGameSources, $prefix),
                 consoles: $this->consolesFrom($ownedGameSources),
                 goRescuable: $this->goRescuable($go),
+                bankDeadline: $deadline,
             );
         }
 
@@ -145,6 +158,7 @@ class PriorityEngine
                 routes: $this->routeLabels($purchasable, $prefix),
                 consoles: $this->consolesFrom($purchasable),
                 goRescuable: $this->goRescuable($go),
+                bankDeadline: $this->requiresBank($purchasable, $go),
             );
         }
 
@@ -175,6 +189,7 @@ class PriorityEngine
                 reason: 'Der einzige Weg nach HOME führt über Pokémon Bank – vor der Abschaltung erledigen!',
                 routes: $this->routeLabels($sources, $prefix),
                 consoles: $consoles,
+                bankDeadline: true,
             );
         }
 
@@ -187,6 +202,7 @@ class PriorityEngine
                 routes: $this->routeLabels($sources, $prefix),
                 consoles: $consoles,
                 goRescuable: $this->goRescuable($go),
+                bankDeadline: $this->requiresBank($sources, $go),
             );
         }
 
@@ -198,7 +214,32 @@ class PriorityEngine
             routes: $this->routeLabels($sources, $prefix),
             consoles: $consoles,
             goRescuable: $this->goRescuable($go),
+            bankDeadline: $this->requiresBank($sources, $go),
         );
+    }
+
+    /**
+     * Führt dieser Satz Bezugsquellen zwangsläufig über Pokémon Bank?
+     *
+     * Gefragt wird immer nach dem Weg, den der Nutzer tatsächlich gehen würde:
+     * Für jemanden, der nur Pokémon Schwarz besitzt, ist die Frist real, auch
+     * wenn es das Pokémon theoretisch noch in einem Switch-Titel gäbe, den er
+     * nicht hat. Ein GO-Weg hebt die Frist immer auf (spec.md 2.4).
+     *
+     * @param  Collection<int,Obtainability>  $sources
+     */
+    private function requiresBank(Collection $sources, ?GoAvailability $go): bool
+    {
+        if ($sources->isEmpty() || $this->goRescuable($go)) {
+            return false;
+        }
+
+        $ohneBank = $sources->contains(
+            fn (Obtainability $o) => $o->game->home_compatible && ! $o->game->bank_only
+        );
+
+        return ! $ohneBank
+            && $sources->contains(fn (Obtainability $o) => (bool) $o->game->bank_only);
     }
 
     /**
@@ -225,6 +266,7 @@ class PriorityEngine
             consoles: $ergebnis->consoles,
             goRescuable: $ergebnis->goRescuable,
             obtainableAtAll: $ergebnis->obtainableAtAll,
+            bankDeadline: $ergebnis->bankDeadline,
         );
     }
 

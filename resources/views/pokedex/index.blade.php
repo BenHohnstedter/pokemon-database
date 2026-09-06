@@ -110,10 +110,26 @@
                 Nur was ich mit meinen Spielen nicht bekommen kann
             </label>
 
+            {{-- Alles mit Bank-Frist, auch das selbst Holbare (spec.md 2.7) --}}
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="deadline" value="1" @checked($filter->onlyBankDeadline)
+                       class="border-2 border-dex-border bg-dex-bg text-dex-accent focus:ring-0">
+                Nur was an der Bank-Deadline hängt
+            </label>
+
             <label class="flex items-center gap-2 text-sm">
                 <input type="checkbox" name="formen" value="1" @checked($zeigtFormen)
                        class="border-2 border-dex-border bg-dex-bg text-dex-accent focus:ring-0">
                 Regionalformen mit anzeigen
+            </label>
+
+            <label for="pro_seite" class="flex items-center gap-2 text-sm">
+                <span class="text-dex-muted">Pro Seite</span>
+                <select id="pro_seite" name="pro_seite" class="pixel-input w-auto py-1">
+                    @foreach (PokedexFilter::PER_PAGE_OPTIONS as $wert)
+                        <option value="{{ $wert }}" @selected($proSeite === $wert)>{{ $wert }}</option>
+                    @endforeach
+                </select>
             </label>
 
             <div class="ml-auto flex gap-2">

@@ -7,6 +7,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\TrainerCardController;
+use App\Http\Controllers\TransferController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -31,6 +32,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('collection.bulk.preview');
     Route::post('/sammlung/masseneingabe', [CollectionController::class, 'bulkApply'])
         ->name('collection.bulk.apply');
+
+    // Sammlungsstand sichern und einspielen
+    Route::get('/sammlung/uebertragen', [TransferController::class, 'index'])
+        ->name('collection.transfer');
+    Route::get('/sammlung/export', [TransferController::class, 'export'])
+        ->name('collection.export');
+    Route::post('/sammlung/import', [TransferController::class, 'import'])
+        ->name('collection.import');
 
     // Einstellungen (spec.md 2.6)
     Route::get('/einstellungen', [SettingsController::class, 'edit'])->name('settings.edit');

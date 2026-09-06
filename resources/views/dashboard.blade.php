@@ -24,7 +24,7 @@
         {{-- ── Fortschritt (spec.md 2.2) ───────────────────────────────────── --}}
         <div class="space-y-4 lg:col-span-2">
             <div class="pixel-panel p-5">
-                <h2 class="mb-4 font-pixel text-xs uppercase text-dex-accent">Gesamtfortschritt</h2>
+                <h2 class="mb-4 font-pixel text-xs uppercase text-dex-accent">Deine Sammlung</h2>
                 <x-progress-bar :bar="$gesamt" />
 
                 <div class="mt-6 grid gap-4 sm:grid-cols-3">
@@ -57,7 +57,7 @@
 
         {{-- ── Countdown und Verteilung (spec.md 2.7) ──────────────────────── --}}
         <div class="space-y-4">
-            <x-bank-countdown :deadline="$deadline" :betroffen="$dringendAnzahl" />
+            <x-bank-countdown :deadline="$deadline" :betroffen="$betroffenAnzahl" />
 
             <div class="pixel-panel p-5">
                 <h2 class="mb-3 font-pixel text-xs uppercase text-dex-accent">Was fehlt Dir noch?</h2>
@@ -95,13 +95,49 @@
         </div>
     </div>
 
-    {{-- ── Die dringendsten Fälle (spec.md 2.7) ────────────────────────────── --}}
+    {{--
+        ── Bank-Deadline, in zwei Gruppen (spec.md 2.7) ─────────────────────────
+        Beide hängen an derselben Frist, brauchen aber völlig verschiedene
+        Handlungen: einmal etwas beschaffen, einmal nur noch übertragen.
+    --}}
+    @if ($selbstHolbarTop->isNotEmpty())
+        <div class="pixel-panel mt-6 border-dex-accent p-5">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <h2 class="font-pixel text-xs uppercase text-dex-accent">
+                        ⏳ Kannst Du selbst holen – aber vor der Deadline
+                    </h2>
+                    <p class="mt-2 text-sm text-dex-muted">
+                        Du besitzt ein passendes Spiel. Fangen und
+                        <strong class="text-dex-text">vor dem {{ $deadline->shutdownAt()->format('d.m.Y') }}</strong>
+                        über Pokémon Bank nach HOME übertragen.
+                    </p>
+                </div>
+                <a href="{{ route('pokedex.index', ['deadline' => 1, 'prio' => 'easy', 'status' => 'fehlend']) }}"
+                   class="pixel-button-ghost">
+                    Alle {{ $selbstHolbarAnzahl }} ansehen
+                </a>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+                @foreach ($selbstHolbarTop as $row)
+                    <x-pokemon-card :row="$row" />
+                @endforeach
+            </div>
+        </div>
+    @endif
+
     @if ($dringendTop->isNotEmpty())
         <div class="pixel-panel mt-6 border-dex-danger p-5">
             <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-                <h2 class="font-pixel text-xs uppercase text-dex-danger">
-                    🔴 Vor der Bank-Abschaltung erledigen
-                </h2>
+                <div>
+                    <h2 class="font-pixel text-xs uppercase text-dex-danger">
+                        🔴 Dafür fehlt Dir noch Spiel oder Konsole
+                    </h2>
+                    <p class="mt-2 text-sm text-dex-muted">
+                        Erst beschaffen, dann übertragen – und beides vor der Abschaltung.
+                    </p>
+                </div>
                 <a href="{{ route('pokedex.index', ['prio' => 'bank_urgent', 'status' => 'fehlend', 'sortierung' => 'dringlichkeit']) }}"
                    class="pixel-button-ghost">
                     Alle {{ $dringendAnzahl }} ansehen

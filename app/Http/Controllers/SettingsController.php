@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\GoRegion;
 use App\Models\Game;
 use App\Models\UserSetting;
+use App\Support\PokedexFilter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -36,6 +37,8 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'go_region' => ['required', Rule::in(array_keys(GoRegion::options()))],
             'theme' => ['required', Rule::in(array_keys(UserSetting::THEMES))],
+            // Optional: fehlt der Wert, bleibt die bisherige Größe stehen.
+            'per_page' => ['nullable', Rule::in(PokedexFilter::PER_PAGE_OPTIONS)],
             'count_regional_in_total' => ['boolean'],
             'count_shiny_in_total' => ['boolean'],
             'owns_3ds' => ['boolean'],
@@ -48,9 +51,12 @@ class SettingsController extends Controller
             'spiele.*' => ['integer', Rule::exists('games', 'id')],
         ]);
 
-        $user->settingsOrDefault()->update([
+        $settings = $user->settingsOrDefault();
+
+        $settings->update([
             'go_region' => $validated['go_region'],
             'theme' => $validated['theme'],
+            'per_page' => (int) ($validated['per_page'] ?? $settings->per_page),
             // Checkboxen liefern nichts, wenn sie aus sind – deshalb explizit casten.
             'count_regional_in_total' => $request->boolean('count_regional_in_total'),
             'count_shiny_in_total' => $request->boolean('count_shiny_in_total'),

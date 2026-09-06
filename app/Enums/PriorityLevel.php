@@ -33,7 +33,9 @@ enum PriorityLevel: string
         return match ($this) {
             self::Owned => 'Besessen',
             self::Easy => 'Einfach',
-            self::Purchasable => 'Kaufbar',
+            // "Kaufbar" klang, als wäre das Pokémon käuflich – gemeint ist, dass
+            // Dir nur noch das Spiel dazu fehlt.
+            self::Purchasable => 'Spiel fehlt Dir noch',
             self::OldHardware => 'Alte Hardware nötig',
             self::BankUrgent => 'Dringend – Bank-Deadline',
             self::TradeOnly => 'Nur noch per Tausch/Community',
@@ -57,7 +59,7 @@ enum PriorityLevel: string
         return match ($this) {
             self::Owned => 'Schon in Deiner Sammlung.',
             self::Easy => 'Kein Handlungsdruck – Du kommst jederzeit ran.',
-            self::Purchasable => 'Das passende Spiel ist noch im Handel erhältlich.',
+            self::Purchasable => 'Du hast das Spiel noch nicht – es ist aber regulär im Handel.',
             self::OldHardware => 'Braucht ein altes Spiel/eine alte Konsole, hat aber keine harte Deadline.',
             self::BankUrgent => 'Führt nur über Pokémon Bank – vor der Abschaltung erledigen!',
             self::TradeOnly => 'Kein regulärer Fangweg mehr – über Tauschbörsen/Community lösen.',

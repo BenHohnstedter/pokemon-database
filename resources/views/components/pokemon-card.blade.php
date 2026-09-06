@@ -10,6 +10,11 @@
 @endphp
 
 {{-- Eine Karte im Pokédex-Raster (spec.md 2.5, 5) --}}
+{{--
+    Achtung: die Klassen müssen in EIN class-Attribut. Ein zweites daneben
+    (etwa aus @class) wird vom Browser stillschweigend verworfen – dann fehlt
+    der Karte in der Gast-Ansicht die komplette Basis-Optik.
+--}}
 <div
     @if ($interactive)
         x-data="dexToggle({
@@ -21,10 +26,14 @@
             sound: {{ auth()->check() && auth()->user()->settingsOrDefault()->sound_effects_enabled ? 'true' : 'false' }},
         })"
         :class="{ 'dex-card--owned': owned, 'dex-card--missing': ! owned, 'animate-pixel-pop': pop }"
+        class="dex-card"
     @else
-        @class(['dex-card--owned' => $row->owned, 'dex-card--missing' => ! $row->owned])
+        @class([
+            'dex-card',
+            'dex-card--owned' => $row->owned,
+            'dex-card--missing' => ! $row->owned,
+        ])
     @endif
-    class="dex-card"
 >
     <div class="flex w-full items-start justify-between gap-1">
         <span class="font-dex text-xs text-dex-muted">{{ $pokemon->dex_label }}</span>
@@ -70,7 +79,17 @@
         @endforeach
     </div>
 
-    <x-priority-badge :priority="$row->priority->level" :show-label="false" class="mt-0.5" />
+    <div class="mt-0.5 flex flex-wrap justify-center gap-1">
+        <x-priority-badge :priority="$row->priority->level" :show-label="false" />
+
+        {{-- Hängt an der Bank-Frist, ist aber nicht 🔴 – sonst stünde es doppelt. --}}
+        @if ($row->priority->affectedByBankDeadline() && ! $row->priority->isUrgent())
+            <span class="inline-flex items-center border border-dex-danger/60 bg-dex-danger/10 px-1.5 py-0.5 text-[10px] uppercase text-dex-danger"
+                  title="Der Weg nach HOME führt über Pokémon Bank – vor der Abschaltung übertragen.">
+                ⏳<span class="sr-only">Bank-Deadline</span>
+            </span>
+        @endif
+    </div>
 
     @if ($interactive)
         <div class="mt-1 flex w-full gap-1">

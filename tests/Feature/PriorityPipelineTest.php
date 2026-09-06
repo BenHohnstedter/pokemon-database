@@ -160,7 +160,7 @@ it('zeigt die richtige Zahl im Countdown-Widget auf dem Dashboard', function () 
     $this->actingAs($this->user)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertSee('Vor der Bank-Abschaltung erledigen')
+        ->assertSee('Dafür fehlt Dir noch Spiel oder Konsole')
         ->assertSee('Bisaknosp');
 });
 
