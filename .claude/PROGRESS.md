@@ -174,16 +174,23 @@ als 🔴 Bank-kritisch meldete:
 
 ### Performance
 
-`PokedexQuery::evaluate()` bewertet den kompletten Dex (1025 Basisformen) in **9 Queries**
-und rund **830 ms** gegen MySQL unter XAMPP, gemessen ohne Nebenlast. Der Löwenanteil ist
-das Hydrieren der Modelle; die Prioritäts-Engine selbst braucht nur ~140 ms. Die Typen
-werden bereits nur noch für die 60 angezeigten Karten nachgeladen.
+`PokedexQuery::evaluate()` bewertet den kompletten Dex (1.082 Formen) in **9 Queries** und
+rund **400 ms** gegen MySQL unter XAMPP.
 
-Das ist brauchbar, aber nicht schnell. **Wenn es stört**, ist der nächste Schritt, die
-Bewertung auf eine schlanke Query-Builder-Abfrage umzustellen (nur die Spalten, die die
-Engine braucht) und die vollen Eloquent-Modelle erst für die aktuelle Seite zu laden.
-Das ist ein spürbarer Umbau der Engine-Schnittstelle, deshalb bewusst nicht vorgezogen,
-solange niemand über Ladezeiten klagt.
+Die Messung der einzelnen Schritte war aufschlussreich: das Laden kostet nur 145 ms
+(7.407 Bezugsquellen, 1.082 Formen), die Engine selbst lag bei 352 ms. Zwei Änderungen
+haben das halbiert — Schwierigkeit und Konsolenliste erst im zurückgebenden Zweig
+berechnen, und die Suche nach besseren Wegen abbrechen, sobald 🟢 erreicht ist. Die Typen
+werden ohnehin nur für die angezeigte Seite nachgeladen.
+
+Seitenzeiten gegen den echten Bestand: Dashboard 729 ms, Pokédex 744 ms, Statistik 588 ms,
+Detailseite 293 ms. Die Seitengröße wirkt sich kaum aus (30 → 240 Einträge kosten rund
+150 ms mehr) — die Grundlast ist die Bewertung, nicht das Rendern.
+
+**Falls es später doch zu langsam wird**, wäre der nächste Schritt, die bewertete Liste je
+Kontext (Spielebesitz + GO-Region + Datenstand) zwischenzuspeichern. Bewusst nicht
+vorgezogen: Cache-Invalidierung ist eine eigene Fehlerquelle, und unter einer Sekunde
+lohnt sie sich nicht.
 
 ### Offene inhaltliche Punkte
 
