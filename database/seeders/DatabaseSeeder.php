@@ -2,24 +2,28 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+/**
+ * Stammdaten, die die App zum Laufen braucht.
+ *
+ * Bewusst OHNE Testnutzer: das Repo ist öffentlich, deshalb landen hier keine
+ * Zugangsdaten (spec.md 10). Zum lokalen Ausprobieren gibt es
+ * `php artisan pokedex:demo-user`.
+ */
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            TypeSeeder::class,
+            GameSeeder::class,
+            AchievementSeeder::class,
+            CuratedObtainabilitySeeder::class,
+            GoAvailabilitySeeder::class,
         ]);
     }
 }

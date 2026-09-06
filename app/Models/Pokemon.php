@@ -22,7 +22,7 @@ class Pokemon extends Model
     protected $fillable = [
         'dex_nr', 'slug', 'name_de', 'name_en', 'generation',
         'is_legendary', 'is_mythical', 'is_baby',
-        'evolution_chain_id', 'evolves_from_id', 'evolution_trigger',
+        'evolution_chain_id', 'evolves_from_id', 'source_pokemon_id', 'evolution_trigger',
         'evolution_conditions', 'evolution_summary_de',
         'difficulty', 'obtainable_directly',
         'base_stats', 'height', 'weight',
@@ -86,6 +86,24 @@ class Pokemon extends Model
     public function evolvesTo(): HasMany
     {
         return $this->hasMany(self::class, 'evolves_from_id');
+    }
+
+    /**
+     * Die Stufe der Linie, über die dieses Pokémon tatsächlich beschafft wird –
+     * bei nur-durch-Entwicklung-Arten also die fangbare Vorstufe.
+     * Wird von `pokedex:recalculate` gepflegt.
+     */
+    public function sourcePokemon(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'source_pokemon_id');
+    }
+
+    /** Ist es ausschließlich über eine Vorstufe erreichbar? */
+    public function onlyViaEvolution(): bool
+    {
+        return ! $this->obtainable_directly
+            && $this->source_pokemon_id !== null
+            && $this->source_pokemon_id !== $this->id;
     }
 
     /** Alle Pokémon derselben Entwicklungslinie, inklusive dieses hier. */
