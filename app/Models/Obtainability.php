@@ -53,7 +53,7 @@ class Obtainability extends Model
         return $this->difficulty ?? $this->method->baseDifficulty();
     }
 
-    /** Ein Weg, der das Pokemon tatsaechlich neu in die Sammlung bringt. */
+    /** Ein Weg, der das Pokémon tatsächlich neu in die Sammlung bringt. */
     public function isUsableSource(): bool
     {
         return ! $this->event_expired && $this->method !== ObtainMethod::TransferOnly;

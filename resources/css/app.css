@@ -1,3 +1,242 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+| Retro, aber high-end (spec.md 5): Pixel-Font nur für Überschriften und
+| Zahlen, darunter eine ganz normale, gut lesbare Informationsarchitektur.
+| Alle Farben laufen über CSS-Variablen, damit der Theme-Wechsel aus den
+| Nutzereinstellungen ohne Neuladen der Seite funktioniert.
+*/
+
+@layer base {
+    :root {
+        --dex-bg: 15 23 42;
+        --dex-panel: 30 41 59;
+        --dex-panel-soft: 51 65 85;
+        --dex-border: 71 85 105;
+        --dex-text: 226 232 240;
+        --dex-muted: 148 163 184;
+        --dex-accent: 250 204 21;
+        --dex-accent-text: 30 27 5;
+        --dex-danger: 248 113 113;
+        --dex-success: 52 211 153;
+        --dex-shadow: 2 6 23;
+    }
+
+    /* Die vier klassischen Game-Boy-Grüntöne. */
+    [data-theme='gameboy'] {
+        --dex-bg: 15 56 15;
+        --dex-panel: 48 98 48;
+        --dex-panel-soft: 60 115 60;
+        --dex-border: 139 172 15;
+        --dex-text: 155 188 15;
+        --dex-muted: 139 172 15;
+        --dex-accent: 155 188 15;
+        --dex-accent-text: 15 56 15;
+        --dex-danger: 200 220 90;
+        --dex-success: 155 188 15;
+        --dex-shadow: 8 32 8;
+    }
+
+    [data-theme='gameboy-pocket'] {
+        --dex-bg: 24 24 27;
+        --dex-panel: 39 39 42;
+        --dex-panel-soft: 63 63 70;
+        --dex-border: 113 113 122;
+        --dex-text: 228 228 231;
+        --dex-muted: 161 161 170;
+        --dex-accent: 212 212 216;
+        --dex-accent-text: 24 24 27;
+        --dex-danger: 244 244 245;
+        --dex-success: 212 212 216;
+        --dex-shadow: 9 9 11;
+    }
+
+    [data-theme='crt-amber'] {
+        --dex-bg: 28 16 4;
+        --dex-panel: 46 26 8;
+        --dex-panel-soft: 66 38 12;
+        --dex-border: 180 105 20;
+        --dex-text: 255 176 60;
+        --dex-muted: 200 130 50;
+        --dex-accent: 255 196 90;
+        --dex-accent-text: 28 16 4;
+        --dex-danger: 255 120 60;
+        --dex-success: 255 196 90;
+        --dex-shadow: 12 6 0;
+    }
+
+    body {
+        background-color: rgb(var(--dex-bg));
+        color: rgb(var(--dex-text));
+        font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+    }
+
+    h1, h2, h3, .font-pixel {
+        font-family: 'Press Start 2P', ui-monospace, monospace;
+        letter-spacing: 0.02em;
+        line-height: 1.6;
+    }
+
+    /* Zahlen im Dex-Stil – schmal, aber gut lesbar. */
+    .font-dex {
+        font-family: 'VT323', ui-monospace, monospace;
+        font-size: 1.15em;
+        letter-spacing: 0.04em;
+    }
+
+    /* Sichtbarer Fokus trotz Retro-Optik (spec.md 7, Barrierefreiheit). */
+    :focus-visible {
+        outline: 3px solid rgb(var(--dex-accent));
+        outline-offset: 2px;
+    }
+}
+
+@layer components {
+    /*
+    | Der Pixel-Rahmen ist bewusst aus reinem CSS gebaut statt aus Bilddateien:
+    | er skaliert mit, bleibt in jedem Theme scharf und kostet keinen Request.
+    */
+    .pixel-panel {
+        background-color: rgb(var(--dex-panel));
+        border: 3px solid rgb(var(--dex-border));
+        box-shadow:
+            4px 4px 0 0 rgb(var(--dex-shadow)),
+            inset 0 0 0 1px rgb(var(--dex-panel-soft));
+        border-radius: 0;
+    }
+
+    .pixel-panel-soft {
+        background-color: rgb(var(--dex-panel-soft) / 0.4);
+        border: 2px solid rgb(var(--dex-border) / 0.6);
+    }
+
+    .pixel-button {
+        @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-pixel uppercase transition-transform;
+        background-color: rgb(var(--dex-accent));
+        color: rgb(var(--dex-accent-text));
+        border: 3px solid rgb(var(--dex-shadow));
+        box-shadow: 3px 3px 0 0 rgb(var(--dex-shadow));
+    }
+
+    .pixel-button:hover {
+        transform: translate(1px, 1px);
+        box-shadow: 2px 2px 0 0 rgb(var(--dex-shadow));
+    }
+
+    .pixel-button:active {
+        transform: translate(3px, 3px);
+        box-shadow: none;
+    }
+
+    .pixel-button-ghost {
+        @apply inline-flex items-center justify-center gap-2 px-3 py-1.5 text-xs uppercase tracking-wide transition-colors;
+        background-color: transparent;
+        color: rgb(var(--dex-text));
+        border: 2px solid rgb(var(--dex-border));
+    }
+
+    .pixel-button-ghost:hover {
+        background-color: rgb(var(--dex-panel-soft) / 0.6);
+    }
+
+    .pixel-input {
+        @apply w-full px-3 py-2 text-sm;
+        background-color: rgb(var(--dex-bg));
+        color: rgb(var(--dex-text));
+        border: 2px solid rgb(var(--dex-border));
+        border-radius: 0;
+    }
+
+    .pixel-input:focus {
+        border-color: rgb(var(--dex-accent));
+        box-shadow: none;
+        outline: none;
+    }
+
+    /* Fortschrittsbalken in Blockoptik statt mit weichem Verlauf. */
+    .dex-progress {
+        background-color: rgb(var(--dex-bg));
+        border: 2px solid rgb(var(--dex-border));
+        height: 1.25rem;
+        overflow: hidden;
+    }
+
+    .dex-progress > span {
+        display: block;
+        height: 100%;
+        background-image: repeating-linear-gradient(
+            90deg,
+            rgb(var(--dex-accent)) 0 8px,
+            rgb(var(--dex-accent) / 0.75) 8px 10px
+        );
+        transition: width 500ms steps(20, end);
+    }
+
+    .dex-card {
+        @apply relative flex flex-col items-center gap-1 p-2 text-center transition-transform;
+        background-color: rgb(var(--dex-panel));
+        border: 2px solid rgb(var(--dex-border));
+    }
+
+    .dex-card:hover {
+        transform: translateY(-2px);
+        border-color: rgb(var(--dex-accent));
+    }
+
+    .dex-card--owned {
+        border-color: rgb(var(--dex-success));
+    }
+
+    /* Fehlende Pokémon als Schattenriss – wie im Spiel vor dem ersten Fang. */
+    .dex-card--missing img {
+        filter: grayscale(1) brightness(0.55) contrast(1.2);
+        opacity: 0.8;
+    }
+
+    .type-badge {
+        @apply inline-block px-1.5 py-0.5 text-[10px] uppercase tracking-wider;
+        border: 1px solid rgb(0 0 0 / 0.35);
+        color: #10151f;
+        font-weight: 700;
+    }
+}
+
+@layer utilities {
+    /* Sprite-Darstellung ohne Weichzeichner. */
+    .pixelated {
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+    }
+
+    .scanlines::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+            0deg,
+            rgb(0 0 0 / 0.14) 0 1px,
+            transparent 1px 3px
+        );
+    }
+}
+
+/* Wer Bewegung reduziert haben will, bekommt sie nicht (spec.md 7). */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+[data-reduce-motion='true'] * {
+    animation: none !important;
+    transition: none !important;
+}

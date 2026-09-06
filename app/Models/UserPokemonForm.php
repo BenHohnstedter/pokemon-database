@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Sammlungsstand eines Nutzers fuer genau eine Form (spec.md 2.5).
+ * Sammlungsstand eines Nutzers für genau eine Form (spec.md 2.5).
  */
 class UserPokemonForm extends Model
 {

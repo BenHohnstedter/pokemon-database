@@ -19,6 +19,11 @@ enum FormType: string
     /** Sonstige dauerhaft speicherbare Form (z.B. Rotom-Formen, Deoxys-Formen). */
     case Other = 'other';
 
+    public function isBase(): bool
+    {
+        return $this === self::Base;
+    }
+
     public function label(): string
     {
         return match ($this) {

@@ -1,100 +1,104 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
-                    </a>
-                </div>
+@php
+    $links = [
+        ['route' => 'dashboard', 'label' => 'Dashboard', 'auth' => true],
+        ['route' => 'pokedex.index', 'label' => 'Pokédex', 'auth' => false],
+        ['route' => 'collection.bulk', 'label' => 'Masseneingabe', 'auth' => true],
+        ['route' => 'statistics', 'label' => 'Statistik', 'auth' => true],
+        ['route' => 'trainer.card', 'label' => 'Trainerkarte', 'auth' => true],
+        ['route' => 'trainer.leaderboard', 'label' => 'Bestenliste', 'auth' => true],
+    ];
+@endphp
 
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
+<nav x-data="{ offen: false }" class="border-b-4 border-dex-border bg-dex-panel">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="flex h-16 items-center justify-between">
+
+            <div class="flex items-center gap-6">
+                <a href="{{ auth()->check() ? route('dashboard') : route('home') }}"
+                   class="font-pixel text-xs text-dex-accent sm:text-sm">
+                    DEX&#8209;RESCUE
+                </a>
+
+                <div class="hidden items-center gap-1 md:flex">
+                    @foreach ($links as $link)
+                        @if (! $link['auth'] || auth()->check())
+                            <a href="{{ route($link['route']) }}"
+                               @class([
+                                   'px-3 py-2 text-sm transition-colors',
+                                   'text-dex-accent border-b-2 border-dex-accent' => request()->routeIs($link['route']),
+                                   'text-dex-muted hover:text-dex-text' => ! request()->routeIs($link['route']),
+                               ])>
+                                {{ $link['label'] }}
+                            </a>
+                        @endif
+                    @endforeach
                 </div>
             </div>
 
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ Auth::user()->name }}</div>
+            <div class="flex items-center gap-3">
+                @auth
+                    {{-- Chiptune-Schalter, standardmäßig aus (spec.md 2.9) --}}
+                    <button type="button"
+                            x-on:click="umschalten()"
+                            class="pixel-button-ghost"
+                            :aria-pressed="musicOn ? 'true' : 'false'"
+                            :title="musicOn ? 'Musik ausschalten' : 'Musik einschalten'">
+                        <span x-text="musicOn ? '♪ an' : '♪ aus'"></span>
+                    </button>
 
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
+                    <div class="hidden text-right text-xs sm:block">
+                        <div class="font-pixel text-[10px] text-dex-accent">
+                            LV {{ auth()->user()->level() }}
+                        </div>
+                        <div class="text-dex-muted">{{ number_format(auth()->user()->xp, 0, ',', '.') }} XP</div>
+                    </div>
+
+                    <div x-data="{ auf: false }" class="relative">
+                        <button type="button" x-on:click="auf = ! auf" class="pixel-button-ghost">
+                            {{ Str::limit(auth()->user()->name, 14) }} ▾
                         </button>
-                    </x-slot>
 
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
+                        <div x-show="auf"
+                             x-on:click.outside="auf = false"
+                             x-cloak
+                             class="pixel-panel absolute right-0 z-40 mt-1 w-52 py-1 text-sm">
+                            <a href="{{ route('settings.edit') }}" class="block px-4 py-2 hover:bg-dex-soft/50">
+                                Einstellungen
+                            </a>
+                            <a href="{{ route('profile.edit') }}" class="block px-4 py-2 hover:bg-dex-soft/50">
+                                Profil
+                            </a>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="block w-full px-4 py-2 text-left hover:bg-dex-soft/50">
+                                    Abmelden
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                @else
+                    <a href="{{ route('login') }}" class="pixel-button-ghost">Anmelden</a>
+                    <a href="{{ route('register') }}" class="pixel-button">Registrieren</a>
+                @endauth
 
-                        <!-- Authentication -->
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-
-                            <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
-                        </form>
-                    </x-slot>
-                </x-dropdown>
-            </div>
-
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                <button type="button"
+                        x-on:click="offen = ! offen"
+                        class="pixel-button-ghost md:hidden"
+                        aria-label="Menü umschalten">
+                    ☰
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-        </div>
-
-        <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
-            </div>
-
-            <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
-                </x-responsive-nav-link>
-
-                <!-- Authentication -->
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-
-                    <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault();
-                                        this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
-                </form>
-            </div>
-        </div>
+    <div x-show="offen" x-cloak class="border-t-2 border-dex-border md:hidden">
+        @foreach ($links as $link)
+            @if (! $link['auth'] || auth()->check())
+                <a href="{{ route($link['route']) }}"
+                   class="block px-4 py-3 text-sm hover:bg-dex-soft/40">
+                    {{ $link['label'] }}
+                </a>
+            @endif
+        @endforeach
     </div>
 </nav>

@@ -11,10 +11,10 @@ class UserSetting extends Model
 {
     use HasFactory;
 
-    /** Auswaehlbare Retro-Farbpaletten (spec.md 5). */
+    /** Auswählbare Retro-Farbpaletten (spec.md 5). */
     public const THEMES = [
         'default' => 'Dex-Rescue (Standard)',
-        'gameboy' => 'Game Boy Gruen',
+        'gameboy' => 'Game Boy Grün',
         'gameboy-pocket' => 'Game Boy Pocket (Graustufen)',
         'crt-amber' => 'CRT Bernstein',
     ];

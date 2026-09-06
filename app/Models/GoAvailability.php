@@ -63,7 +63,7 @@ class GoAvailability extends Model
         return $regions !== [] && ! in_array(GoRegion::Weltweit->value, $regions, true);
     }
 
-    /** Regionsnamen als lesbarer String fuers UI. */
+    /** Regionsnamen als lesbarer String fürs UI. */
     public function regionLabels(): string
     {
         return collect($this->regions ?? [])

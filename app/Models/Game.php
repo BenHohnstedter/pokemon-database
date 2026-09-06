@@ -43,7 +43,7 @@ class Game extends Model
         return $query->orderBy('generation')->orderBy('sort_order')->orderBy('name_de');
     }
 
-    /** Laeuft auf alter Hardware im Sinne der Prioritaets-Engine (spec.md 2.7)? */
+    /** Läuft auf alter Hardware im Sinne der Prioritäts-Engine (spec.md 2.7)? */
     public function isLegacyHardware(): bool
     {
         return $this->platform->isLegacyHardware();

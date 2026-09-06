@@ -6,10 +6,10 @@ use App\Enums\GoRegion;
 use App\Models\User;
 
 /**
- * Alles, was die Prioritaets-Engine ueber den Nutzer wissen muss (spec.md 2.6, 2.7).
+ * Alles, was die Prioritäts-Engine über den Nutzer wissen muss (spec.md 2.6, 2.7).
  *
- * Bewusst ein schlankes Wertobjekt statt des User-Models: die Engine laeuft ueber
- * 1.300+ Pokemon und darf dabei nicht pro Aufruf die Datenbank anfassen.
+ * Bewusst ein schlankes Wertobjekt statt des User-Models: die Engine läuft über
+ * 1.300+ Pokémon und darf dabei nicht pro Aufruf die Datenbank anfassen.
  */
 final class PriorityContext
 {
@@ -33,7 +33,7 @@ final class PriorityContext
         );
     }
 
-    /** Kontext fuer nicht eingeloggte Besucher: kein Spielebesitz. */
+    /** Kontext für nicht eingeloggte Besucher: kein Spielebesitz. */
     public static function guest(): self
     {
         return new self();

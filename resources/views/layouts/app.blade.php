@@ -1,36 +1,76 @@
+@php
+    /** @var \App\Models\UserSetting|null $dexSettings */
+    $dexSettings = auth()->check() ? auth()->user()->settingsOrDefault() : null;
+@endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"
+      data-theme="{{ $dexSettings?->theme ?? 'default' }}"
+      data-reduce-motion="{{ $dexSettings?->reduce_motion ? 'true' : 'false' }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#0f172a">
+    <title>{{ $title ?? config('app.name') }}</title>
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+    {{-- PWA: installierbar auf dem Homescreen (spec.md 6, 7) --}}
+    <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
+    <link rel="apple-touch-icon" href="{{ asset('icons/icon-192.png') }}">
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body class="min-h-screen antialiased"
+      x-data="dexAudio({
+          music: {{ $dexSettings?->music_enabled ? 'true' : 'false' }},
+          volume: {{ $dexSettings?->music_volume ?? 35 }}
+      })">
 
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-    </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
+    <a href="#inhalt"
+       class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 pixel-button">
+        Zum Inhalt springen
+    </a>
 
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
+    @include('layouts.navigation')
 
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
-        </div>
-    </body>
+    @isset($header)
+        <header class="border-b-2 border-dex-border/60 bg-dex-panel/40">
+            <div class="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+                {{ $header }}
+            </div>
+        </header>
+    @endisset
+
+    <main id="inhalt" class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        @if (session('status'))
+            <div class="pixel-panel mb-5 border-dex-success/70 px-4 py-3 text-sm" role="status">
+                {{ session('status') }}
+            </div>
+        @endif
+
+        {{ $slot }}
+    </main>
+
+    <footer class="mt-10 border-t-2 border-dex-border/50 px-4 py-6 text-center text-xs text-dex-muted">
+        <p>
+            Privates, nicht-kommerzielles Fan-Projekt. Pokémon-Namen, -Sprites und -Artworks
+            gehören Nintendo/Game&nbsp;Freak/The&nbsp;Pokémon&nbsp;Company.
+        </p>
+        <p class="mt-1">
+            Daten über <a class="underline" href="https://pokeapi.co/" rel="noopener">PokéAPI</a>,
+            ergänzt um Angaben aus
+            <a class="underline" href="https://bulbapedia.bulbagarden.net/" rel="noopener">Bulbapedia</a>
+            (CC&nbsp;BY-NC-SA).
+        </p>
+    </footer>
+
+    {{-- Fehler- und XP-Meldungen aus den Alpine-Toggles --}}
+    <div x-data="{ meldung: '', sichtbar: false }"
+         x-on:dex:fehler.window="meldung = $event.detail; sichtbar = true; setTimeout(() => sichtbar = false, 5000)"
+         x-show="sichtbar"
+         x-cloak
+         class="fixed bottom-4 left-1/2 z-50 -translate-x-1/2"
+         role="alert">
+        <div class="pixel-panel border-dex-danger px-4 py-2 text-sm" x-text="meldung"></div>
+    </div>
+</body>
 </html>

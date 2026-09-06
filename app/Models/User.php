@@ -83,11 +83,22 @@ class User extends Authenticatable
 
     /**
      * Legt Einstellungen bei Bedarf mit den Defaults an, damit der Rest der App
-     * sich nie um einen fehlenden Datensatz kuemmern muss.
+     * sich nie um einen fehlenden Datensatz kümmern muss.
+     *
+     * Das Ergebnis wird als geladene Relation zurückgeschrieben: Views rufen die
+     * Methode mehrfach pro Request auf, und ohne das würde jeder weitere Aufruf
+     * erneut einzufügen versuchen und am Unique-Index auflaufen.
      */
     public function settingsOrDefault(): UserSetting
     {
-        return $this->settings ?: $this->settings()->create([]);
+        if ($this->relationLoaded('settings') && $this->settings !== null) {
+            return $this->settings;
+        }
+
+        $settings = $this->settings()->firstOrCreate([]);
+        $this->setRelation('settings', $settings);
+
+        return $settings;
     }
 
     /** Gesamt-XP -> Trainer-Level (spec.md 2.9). */

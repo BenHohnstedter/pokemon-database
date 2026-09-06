@@ -1,15 +1,48 @@
 <?php
 
+use App\Http\Controllers\CollectionController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PokedexController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\StatisticsController;
+use App\Http\Controllers\TrainerCardController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::view('/', 'welcome')->name('home');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+/*
+| Der Pokédex ist auch ohne Login lesbar – ohne Spielebesitz rechnet die
+| Prioritäts-Engine dann mit dem Gast-Kontext (spec.md 2.7).
+*/
+Route::get('/pokedex', [PokedexController::class, 'index'])->name('pokedex.index');
+Route::get('/pokedex/{pokemon}', [PokedexController::class, 'show'])->name('pokedex.show');
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/statistik', StatisticsController::class)->name('statistics');
+
+    // Sammlungsstand (spec.md 2.5)
+    Route::post('/sammlung/{form}/umschalten', [CollectionController::class, 'toggle'])
+        ->name('collection.toggle');
+    Route::get('/sammlung/masseneingabe', [CollectionController::class, 'bulkForm'])
+        ->name('collection.bulk');
+    Route::post('/sammlung/masseneingabe/vorschau', [CollectionController::class, 'bulkPreview'])
+        ->name('collection.bulk.preview');
+    Route::post('/sammlung/masseneingabe', [CollectionController::class, 'bulkApply'])
+        ->name('collection.bulk.apply');
+
+    // Einstellungen (spec.md 2.6)
+    Route::get('/einstellungen', [SettingsController::class, 'edit'])->name('settings.edit');
+    Route::patch('/einstellungen', [SettingsController::class, 'update'])->name('settings.update');
+
+    // Trainer-Karte und Bestenliste (spec.md 2.9, 2.10)
+    Route::get('/trainerkarte', [TrainerCardController::class, 'show'])->name('trainer.card');
+    Route::get('/bestenliste', [TrainerCardController::class, 'leaderboard'])->name('trainer.leaderboard');
+    Route::post('/freunde', [TrainerCardController::class, 'addFriend'])->name('friends.add');
+    Route::post('/freunde/{friendship}/bestaetigen', [TrainerCardController::class, 'acceptFriend'])
+        ->name('friends.accept');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

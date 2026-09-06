@@ -6,12 +6,12 @@ use App\Enums\Difficulty;
 use App\Enums\PriorityLevel;
 
 /**
- * Ergebnis der Prioritaets-Engine fuer genau eine Form (spec.md 2.7, 2.8).
+ * Ergebnis der Prioritäts-Engine für genau eine Form (spec.md 2.7, 2.8).
  */
 final class PriorityResult
 {
     /**
-     * @param  array<int,string>  $routes   Konkrete Handlungsanweisungen fuers UI
+     * @param  array<int,string>  $routes   Konkrete Handlungsanweisungen fürs UI
      * @param  array<int,string>  $consoles Benoetigte Konsolen, deduped
      */
     public function __construct(
@@ -30,7 +30,7 @@ final class PriorityResult
     }
 
     /**
-     * Kann der Nutzer es mit seinem aktuellen Spielebesitz ueberhaupt bekommen?
+     * Kann der Nutzer es mit seinem aktuellen Spielebesitz überhaupt bekommen?
      * Speist den Filter aus spec.md 2.8.
      */
     public function reachableWithCurrentGames(): bool

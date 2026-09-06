@@ -39,7 +39,7 @@ class ObtainabilityFactory extends Factory
     {
         return $this->state(fn () => [
             'method' => ObtainMethod::TransferOnly,
-            'location_detail' => 'Nur per Transfer aus aelteren Spielen',
+            'location_detail' => 'Nur per Transfer aus älteren Spielen',
         ]);
     }
 }
