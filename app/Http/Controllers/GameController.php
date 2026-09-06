@@ -43,9 +43,20 @@ class GameController extends Controller
     {
         $user = $request->user();
 
+        /*
+         * Standardmäßig nur normale Formen.
+         *
+         * Anders als der Pokédex, der die Sammlung vollständig abbilden will,
+         * beantwortet diese Seite die Frage "was kann ich hier fangen?" – und
+         * die stellt sich auf Artebene. Deshalb hängt die Anzeige hier auch
+         * nicht an der Einstellung `count_regional_in_total`, sondern nur am
+         * bewussten Umschalten.
+         */
+        $zeigeFormen = $request->boolean('formen');
+
         $bewertet = $this->query
-            ->evaluate($user, [FormType::Base, FormType::Regional, FormType::Other])
-            ->keyBy(fn (object $row) => $row->form->pokemon_id);
+            ->evaluate($user, $this->formTypes($zeigeFormen))
+            ->groupBy(fn (object $row) => $row->form->pokemon_id);
 
         // Bezugsquellen dieses Spiels, gruppiert nach Art.
         $quellen = Obtainability::query()
@@ -56,19 +67,75 @@ class GameController extends Controller
         $nurOffene = $request->boolean('offen', true);
 
         $zeilen = collect($quellen)
-            ->map(function (Collection $quellenDerArt, int $pokemonId) use ($bewertet) {
-                $row = $bewertet->get($pokemonId);
+            ->flatMap(fn (Collection $quellenDerArt, int $pokemonId) => $this->zeilenDerArt(
+                $bewertet->get($pokemonId) ?? collect(),
+                $quellenDerArt,
+            ))
+            ->when($nurOffene, fn (Collection $c) => $c->reject(fn (object $row) => $row->owned))
+            // Nach Dex-Nummer, und innerhalb einer Art die normale Form zuerst.
+            ->sortBy(fn (object $row) => sprintf(
+                '%05d-%d-%s',
+                $row->form->pokemon->dex_nr,
+                $row->form->form_type === FormType::Base ? 0 : 1,
+                $row->form->name_de,
+            ))
+            ->values();
 
-                if ($row === null) {
-                    return null;
-                }
+        $this->query->loadTypesFor($zeilen);
+
+        return view('games.show', [
+            'game' => $game,
+            'zeilen' => $zeilen,
+            'nurOffene' => $nurOffene,
+            'zeigtFormen' => $zeigeFormen,
+            // Ehrlich sagen, warum das Umschalten nichts ändert, statt still
+            // dieselbe Liste noch einmal zu zeigen.
+            'formenOhneFundort' => $zeigeFormen
+                && $quellen->flatten()->whereNotNull('pokemon_form_id')->isEmpty(),
+            'gesamtImSpiel' => $quellen->count(),
+            'besitztSpiel' => $user->games()->where('games.id', $game->id)->exists(),
+        ]);
+    }
+
+    /** @return array<int,FormType> */
+    private function formTypes(bool $mitFormen): array
+    {
+        return $mitFormen
+            ? [FormType::Base, FormType::Regional, FormType::Other]
+            : [FormType::Base];
+    }
+
+    /**
+     * Eine Zeile je Form, für die dieses Spiel tatsächlich einen Fundort hat.
+     *
+     * Die Zuordnung ist der springende Punkt: Fundorte hängen bei uns fast
+     * immer an der Art, nicht an einer bestimmten Form. Eine solche Quelle
+     * gehört zur normalen Form – "Vulpix in Rot" heißt nicht, dass es dort
+     * auch das Alola-Vulpix gäbe. Regionalformen erscheinen deshalb nur, wenn
+     * ein Fundort ausdrücklich auf genau diese Form zeigt.
+     *
+     * @param  Collection<int,object>  $formenDerArt
+     * @param  Collection<int,Obtainability>  $quellenDerArt
+     * @return Collection<int,object>
+     */
+    private function zeilenDerArt(Collection $formenDerArt, Collection $quellenDerArt): Collection
+    {
+        return $formenDerArt
+            ->map(function (object $row) use ($quellenDerArt) {
+                $passend = $row->form->form_type === FormType::Base
+                    ? $quellenDerArt->whereNull('pokemon_form_id')
+                    : $quellenDerArt->where('pokemon_form_id', $row->form->id);
 
                 // Für die Anzeige zählt der Weg IN DIESEM Spiel, nicht der
                 // insgesamt beste – sonst stünde bei jedem Eintrag dieselbe
                 // Route aus einem ganz anderen Titel.
-                $beste = $quellenDerArt
+                $beste = $passend
                     ->sortBy(fn (Obtainability $o) => $o->effectiveDifficulty()->weight())
                     ->first();
+
+                if ($beste === null) {
+                    return null;
+                }
 
                 return (object) [
                     'form' => $row->form,
@@ -80,19 +147,7 @@ class GameController extends Controller
                 ];
             })
             ->filter()
-            ->when($nurOffene, fn (Collection $c) => $c->reject(fn (object $row) => $row->owned))
-            ->sortBy(fn (object $row) => $row->form->pokemon->dex_nr)
             ->values();
-
-        $this->query->loadTypesFor($zeilen);
-
-        return view('games.show', [
-            'game' => $game,
-            'zeilen' => $zeilen,
-            'nurOffene' => $nurOffene,
-            'gesamtImSpiel' => $quellen->count(),
-            'besitztSpiel' => $user->games()->where('games.id', $game->id)->exists(),
-        ]);
     }
 
     /**

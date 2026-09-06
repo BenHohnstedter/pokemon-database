@@ -8,6 +8,7 @@
 use App\Enums\ObtainMethod;
 use App\Models\Obtainability;
 use App\Models\Pokemon;
+use App\Models\PokemonForm;
 use App\Models\User;
 use App\Models\UserPokemonForm;
 use Database\Factories\GameFactory;
@@ -216,4 +217,79 @@ it('nennt bei offenen Arten auch den Gesamtbestand des Spiels', function () {
         ->get(route('games.index'))
         ->assertOk()
         ->assertSee('von 3 hinterlegten');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Regionalformen in der Spielansicht
+|--------------------------------------------------------------------------
+|
+| Fundorte hängen bei uns an der Art, nicht an einer bestimmten Form. Eine
+| Quelle "Vulpix in Rot" auf das Alola-Vulpix zu übertragen wäre eine
+| Behauptung, die die Daten nicht hergeben.
+*/
+
+it('zeigt standardmäßig nur die normalen Formen', function () {
+    $game = GameFactory::new()->create();
+    $pokemon = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Vulpix']);
+    PokemonForm::factory()->regional()->for($pokemon)->create(['name_de' => 'Vulpix (Alola-Form)']);
+
+    Obtainability::factory()->create(['pokemon_id' => $pokemon->id, 'game_id' => $game->id]);
+
+    $antwort = $this->actingAs($this->user)
+        ->get(route('games.show', $game))
+        ->assertOk()
+        ->assertSee('Vulpix')
+        ->assertDontSee('Alola-Form');
+
+    expect($antwort->viewData('zeilen'))->toHaveCount(1);
+});
+
+it('führt Sonderformen auch eingeschaltet nur mit eigenem Fundort auf', function () {
+    $game = GameFactory::new()->create();
+    $pokemon = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Vulpix']);
+    PokemonForm::factory()->regional()->for($pokemon)->create(['name_de' => 'Vulpix (Alola-Form)']);
+
+    // Quelle auf Artebene – sie gehört zur normalen Form, nicht zur Alola-Form.
+    Obtainability::factory()->create(['pokemon_id' => $pokemon->id, 'game_id' => $game->id]);
+
+    $this->actingAs($this->user)
+        ->get(route('games.show', [$game, 'formen' => 1]))
+        ->assertOk()
+        ->assertSee('Vulpix')
+        ->assertDontSee('Alola-Form')
+        ->assertSee('kein eigener Fundort hinterlegt');
+});
+
+it('zeigt eine Regionalform, sobald sie einen eigenen Fundort hat', function () {
+    $game = GameFactory::new()->create(['name_de' => 'Sonne']);
+    $pokemon = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Vulpix']);
+    $alola = PokemonForm::factory()->regional()->for($pokemon)->create(['name_de' => 'Vulpix (Alola-Form)']);
+
+    Obtainability::factory()->create([
+        'pokemon_id' => $pokemon->id,
+        'game_id' => $game->id,
+        'pokemon_form_id' => $alola->id,
+        'location_detail' => 'Route 3 (Akala)',
+    ]);
+
+    $antwort = $this->actingAs($this->user)
+        ->get(route('games.show', [$game, 'formen' => 1]))
+        ->assertOk()
+        ->assertSee('Alola-Form')
+        ->assertSee('Route 3 (Akala)')
+        ->assertDontSee('kein eigener Fundort hinterlegt');
+
+    // Die normale Form hat hier keine eigene Quelle und fehlt deshalb.
+    expect($antwort->viewData('zeilen'))->toHaveCount(1);
+});
+
+it('behält den Formen-Schalter beim Umschalten auf "Alle anzeigen"', function () {
+    $game = GameFactory::new()->create();
+
+    $this->actingAs($this->user)
+        ->get(route('games.show', [$game, 'formen' => 1]))
+        ->assertOk()
+        // Im Markup steht das & escaped – geprüft wird der Link, wie er im HTML landet.
+        ->assertSee(e(route('games.show', [$game, 'offen' => 0, 'formen' => 1])), escape: false);
 });

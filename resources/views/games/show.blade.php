@@ -17,9 +17,15 @@
             </div>
 
             <div class="flex flex-wrap gap-2">
-                <a href="{{ route('games.show', [$game, 'offen' => $nurOffene ? 0 : 1]) }}"
+                <a href="{{ route('games.show', [$game, 'offen' => $nurOffene ? 0 : 1, 'formen' => $zeigtFormen ? 1 : 0]) }}"
+                   dusk="spiel-offen-umschalten"
                    class="pixel-button-ghost">
                     {{ $nurOffene ? 'Alle anzeigen' : 'Nur fehlende' }}
+                </a>
+                <a href="{{ route('games.show', [$game, 'offen' => $nurOffene ? 1 : 0, 'formen' => $zeigtFormen ? 0 : 1]) }}"
+                   dusk="spiel-formen-umschalten"
+                   @class(['pixel-button-ghost', 'border-dex-accent text-dex-accent' => $zeigtFormen])>
+                    {{ $zeigtFormen ? 'Nur normale Formen' : 'Regionalformen mit anzeigen' }}
                 </a>
                 <a href="{{ route('games.index') }}" class="pixel-button-ghost">← Alle Spiele</a>
             </div>
@@ -49,6 +55,18 @@
 
         @if ($game->note)
             <p class="mt-1 text-xs text-dex-muted">{{ $game->note }}</p>
+        @endif
+
+        @if ($formenOhneFundort)
+            {{-- Die Fundorte der PokéAPI hängen an der Art, nicht an der Form.
+                 Eine Quelle "Vulpix in Rot" auf das Alola-Vulpix zu übertragen
+                 wäre eine Behauptung, die die Daten nicht hergeben. --}}
+            <p class="mt-2 text-xs text-dex-muted">
+                Für Sonderformen ist in diesem Spiel kein eigener Fundort hinterlegt –
+                die Liste zeigt deshalb weiterhin nur die normalen Formen. Deine
+                Regionalformen findest Du im
+                <a href="{{ route('pokedex.index', ['formen' => 1]) }}" class="underline">Pokédex</a>.
+            </p>
         @endif
 
         @unless ($besitztSpiel)
