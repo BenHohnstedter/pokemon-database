@@ -27,7 +27,7 @@
             min-width:auto und schrumpfen deshalb nicht unter ihren Inhalt.
             Die Bezugsquellen-Tabelle hat min-w-[36rem] – ohne min-w-0 hätte
             sie die ganze Seite auf dem Handy in den Querlauf geschoben, statt
-            ihr eigenes overflow-x-auto zu nutzen.
+            ihr eigenes pixel-scroll-x zu nutzen.
         --}}
         {{-- ── Formen mit Besitz-Toggles (spec.md 2.2, 2.5) ────────────────── --}}
         <div class="min-w-0 space-y-4">
@@ -164,46 +164,45 @@
                         @endif
                     </p>
                 @else
-                    <div class="mt-4 overflow-x-auto">
-                        <table class="w-full min-w-[36rem] text-left text-sm">
-                            <thead class="border-b-2 border-dex-border text-[10px] uppercase text-dex-muted">
-                                <tr>
-                                    <th class="py-2 pr-3">Spiel</th>
-                                    <th class="py-2 pr-3">Methode</th>
-                                    <th class="py-2 pr-3">Ort / Detail</th>
-                                    <th class="py-2">Weg nach HOME</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-dex-border/40">
-                                @foreach ($quellen as $quelle)
-                                    <tr @class(['opacity-50' => $quelle->event_expired])>
-                                        <td class="py-2 pr-3">
-                                            <span class="font-semibold">{{ $quelle->game->name_de }}</span>
-                                            <span class="block text-[10px] text-dex-muted">
-                                                {{ $quelle->game->platform->label() }}
-                                            </span>
-                                        </td>
-                                        <td class="py-2 pr-3">
-                                            {{ $quelle->method->label() }}
-                                            @if ($quelle->event_expired)
-                                                <span class="block text-[10px] text-dex-danger">Event vorbei</span>
-                                            @endif
-                                        </td>
-                                        <td class="py-2 pr-3 text-dex-muted">{{ $quelle->location_detail ?: '—' }}</td>
-                                        <td class="py-2 text-[11px]">
-                                            @if ($quelle->game->home_compatible && ! $quelle->game->bank_only)
-                                                <span class="text-dex-success">direkt an HOME</span>
-                                            @elseif ($quelle->game->bank_only)
-                                                <span class="text-dex-danger">über Pokémon Bank</span>
-                                            @else
-                                                <span class="text-dex-muted">kein Transferweg</span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                    {{--
+                        Zuerst die Spiele, die der Nutzer besitzt: "Komme ich da ran?"
+                        ist die eigentliche Frage, und eine flache Liste aus sechs
+                        Titeln beantwortet sie nicht.
+                    --}}
+                    @if ($quellenInMeinenSpielen->isNotEmpty())
+                        <div class="mt-5">
+                            <h3 class="font-pixel text-[10px] uppercase text-dex-success">
+                                ✔ In Deinen Spielen
+                            </h3>
+                            <p class="mt-1 text-xs text-dex-muted">
+                                Hier kommst Du direkt dran – kein weiteres Spiel nötig.
+                            </p>
+                            <x-obtainability-table :quellen="$quellenInMeinenSpielen" class="mt-3" />
+                        </div>
+                    @endif
+
+                    @if ($quellenAndereSpiele->isNotEmpty())
+                        <div class="mt-6">
+                            <h3 class="font-pixel text-[10px] uppercase text-dex-muted">
+                                @if ($quellenInMeinenSpielen->isNotEmpty())
+                                    Außerdem in diesen Spielen
+                                @elseif ($hatSpieleEingetragen)
+                                    Nur in Spielen, die Du nicht hast
+                                @else
+                                    In diesen Spielen
+                                @endif
+                            </h3>
+
+                            @unless ($hatSpieleEingetragen)
+                                <p class="mt-1 text-xs text-dex-muted">
+                                    <a href="{{ route('settings.edit') }}" class="underline">Trag Deine Spiele ein</a>,
+                                    dann steht hier zuerst, wo Du selbst drankommst.
+                                </p>
+                            @endunless
+
+                            <x-obtainability-table :quellen="$quellenAndereSpiele" class="mt-3" />
+                        </div>
+                    @endif
                 @endif
             </div>
 

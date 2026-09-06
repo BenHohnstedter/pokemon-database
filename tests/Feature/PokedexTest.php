@@ -285,3 +285,87 @@ it('ignoriert eine unsinnige Seitengröße', function () {
         ->assertOk()
         ->assertDontSee('page=2');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Bezugsquellen nach eigenen Spielen gruppiert (spec.md 2.3)
+|--------------------------------------------------------------------------
+|
+| Eine flache Liste aus sechs Titeln beantwortet die eigentliche Frage nicht:
+| "Komme ich da mit dem ran, was ich habe?"
+*/
+
+it('stellt die eigenen Spiele auf der Detailseite nach vorne', function () {
+    $meins = GameFactory::new()->create(['name_de' => 'Pokémon X']);
+    $fremd = GameFactory::new()->bankOnly()->create(['name_de' => 'HeartGold']);
+
+    $this->user->games()->attach($meins);
+
+    $pokemon = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Kapilz']);
+    Obtainability::factory()->create(['pokemon_id' => $pokemon->id, 'game_id' => $meins->id]);
+    Obtainability::factory()->create(['pokemon_id' => $pokemon->id, 'game_id' => $fremd->id]);
+
+    $antwort = $this->actingAs($this->user)
+        ->get(route('pokedex.show', $pokemon))
+        ->assertOk()
+        ->assertSee('In Deinen Spielen')
+        ->assertSee('Außerdem in diesen Spielen');
+
+    expect($antwort->viewData('quellenInMeinenSpielen')->pluck('game_id')->all())->toBe([$meins->id])
+        ->and($antwort->viewData('quellenAndereSpiele')->pluck('game_id')->all())->toBe([$fremd->id]);
+
+    // Der eigene Titel steht im Markup vor den fremden.
+    $html = $antwort->getContent();
+    expect(strpos($html, 'Pokémon X'))->toBeLessThan(strpos($html, 'HeartGold'));
+});
+
+it('sagt deutlich, wenn es das Pokémon in keinem eigenen Spiel gibt', function () {
+    $meins = GameFactory::new()->create(['name_de' => 'Karmesin']);
+    $fremd = GameFactory::new()->bankOnly()->create(['name_de' => 'HeartGold']);
+
+    $this->user->games()->attach($meins);
+
+    $pokemon = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Kapilz']);
+    Obtainability::factory()->create(['pokemon_id' => $pokemon->id, 'game_id' => $fremd->id]);
+
+    $this->actingAs($this->user)
+        ->get(route('pokedex.show', $pokemon))
+        ->assertOk()
+        ->assertSee('Nur in Spielen, die Du nicht hast')
+        ->assertDontSee('In Deinen Spielen');
+});
+
+it('bittet Gäste ohne eingetragene Spiele um ihre Spieleliste', function () {
+    $game = GameFactory::new()->create(['name_de' => 'Karmesin']);
+    $pokemon = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Kapilz']);
+    Obtainability::factory()->create(['pokemon_id' => $pokemon->id, 'game_id' => $game->id]);
+
+    $this->actingAs($this->user)
+        ->get(route('pokedex.show', $pokemon))
+        ->assertOk()
+        ->assertSee('In diesen Spielen')
+        ->assertSee('Trag Deine Spiele ein');
+});
+
+it('verlinkt Bezugsquellen für angemeldete Nutzer auf die Spielseite', function () {
+    $game = GameFactory::new()->create(['name_de' => 'Karmesin']);
+    $pokemon = Pokemon::factory()->withBaseForm()->create();
+    Obtainability::factory()->create(['pokemon_id' => $pokemon->id, 'game_id' => $game->id]);
+
+    $this->actingAs($this->user)
+        ->get(route('pokedex.show', $pokemon))
+        ->assertOk()
+        ->assertSee(route('games.show', $game), escape: false);
+});
+
+it('verlinkt für Gäste nicht auf die Spielseite', function () {
+    // Ohne Login gibt es die Spiel-Ansicht nicht – der Name bleibt reiner Text.
+    $game = GameFactory::new()->create(['name_de' => 'Karmesin']);
+    $pokemon = Pokemon::factory()->withBaseForm()->create();
+    Obtainability::factory()->create(['pokemon_id' => $pokemon->id, 'game_id' => $game->id]);
+
+    $this->get(route('pokedex.show', $pokemon))
+        ->assertOk()
+        ->assertSee('Karmesin')
+        ->assertDontSee(route('games.show', $game), escape: false);
+});

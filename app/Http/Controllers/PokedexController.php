@@ -72,11 +72,29 @@ class PokedexController extends Controller
 
         $linie = $pokemon->evolutionLine()->get();
 
+        $quellen = $this->query->sourcesFor($pokemon->id)
+            ->sortBy(fn ($o) => $o->game?->sort_order ?? 0);
+
+        /*
+        | Die Bezugsquellen nach eigenem Spielebesitz aufteilen (spec.md 2.3, 2.7).
+        |
+        | Eine flache Liste aus sechs Spielen beantwortet die eigentliche Frage
+        | nicht: "Komme ich da überhaupt ran?" Wer X besitzt, will das zuerst
+        | sehen und den Rest nur als Alternative.
+        */
+        $besesseneSpiele = $user?->games()->pluck('games.id')->all() ?? [];
+
         return view('pokedex.show', [
             'pokemon' => $pokemon,
             'formen' => $formen,
-            'quellen' => $this->query->sourcesFor($pokemon->id)
-                ->sortBy(fn ($o) => $o->game?->sort_order ?? 0),
+            'quellen' => $quellen,
+            'quellenInMeinenSpielen' => $quellen->filter(
+                fn ($o) => in_array($o->game_id, $besesseneSpiele, true)
+            )->values(),
+            'quellenAndereSpiele' => $quellen->reject(
+                fn ($o) => in_array($o->game_id, $besesseneSpiele, true)
+            )->values(),
+            'hatSpieleEingetragen' => $besesseneSpiele !== [],
             'linie' => $linie,
             'fangplan' => $this->multiCatch->plan($linie, $this->ownedDexNumbers($request, $linie)),
         ]);
