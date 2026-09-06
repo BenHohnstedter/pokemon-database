@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GameController;
 use App\Http\Controllers\PokedexController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicProfileController;
@@ -44,6 +45,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('collection.export');
     Route::post('/sammlung/import', [TransferController::class, 'import'])
         ->name('collection.import');
+
+    // Spiel für Spiel abarbeiten: "Ich spiele gerade X – was fehlt mir hier noch?"
+    Route::get('/spiele', [GameController::class, 'index'])->name('games.index');
+    Route::get('/spiele/{game}', [GameController::class, 'show'])->name('games.show');
 
     // Einstellungen (spec.md 2.6)
     Route::get('/einstellungen', [SettingsController::class, 'edit'])->name('settings.edit');

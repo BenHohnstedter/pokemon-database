@@ -2,6 +2,7 @@
     $links = [
         ['route' => 'dashboard', 'label' => 'Dashboard', 'auth' => true],
         ['route' => 'pokedex.index', 'label' => 'Pokédex', 'auth' => false],
+        ['route' => 'games.index', 'label' => 'Spiele', 'auth' => true],
         ['route' => 'collection.bulk', 'label' => 'Masseneingabe', 'auth' => true],
         ['route' => 'statistics', 'label' => 'Statistik', 'auth' => true],
         ['route' => 'collection.transfer', 'label' => 'Sichern', 'auth' => true],
