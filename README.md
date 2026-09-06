@@ -79,6 +79,33 @@ php artisan pokedex:import-encounters
 php artisan pokedex:recalculate
 ```
 
+Danach **noch einmal seeden**:
+
+```bash
+php artisan db:seed
+```
+
+Und die Fundort-Lücken der PokéAPI schließen:
+
+```bash
+php artisan pokedex:fill-gaps && php artisan pokedex:recalculate
+```
+
+`location-area-encounters` ist für die neueren Titel praktisch leer — für
+Karmesin/Purpur liefert die API sechs Einträge für über hundert Arten. Ohne
+diesen Schritt landet fast die komplette neunte Generation auf ⚪ *nur noch per
+Tausch*, obwohl sie im aktuell erhältlichen Spiel schlicht fangbar ist. Der
+Befehl trägt für Arten **ohne jeden** Beschaffungsweg einen Wildfang im
+Hauptspiel ihrer Generation nach, klar als Annahme gekennzeichnet
+(`source = generation-fallback`, Fundort „noch nicht hinterlegt"). Mit
+`--dry-run` erst ansehen, mit `--remove` wieder entfernen, sobald echte Daten
+per `pokedex:import-sources` vorliegen.
+
+Das ist kein Versehen: `CuratedObtainabilitySeeder` und `GoAvailabilitySeeder`
+hängen ihre Einträge an konkrete Pokémon. Laufen sie vor dem Import, finden sie
+nichts und legen nichts an – Starter, Fossilien und die GO-Regionalexklusiven
+fehlten dann. Beide Seeder sagen in dem Fall Bescheid und sind wiederholbar.
+
 Für einen schnellen Testlauf reicht ein Ausschnitt:
 
 ```bash
@@ -93,6 +120,8 @@ Nützliche Optionen:
 | `pokedex:import --include-other-forms` | Auch Sonderformen jenseits der Regionalformen anlegen |
 | `pokedex:import --fresh-cache` | Plattencache leeren und alles neu abrufen |
 | `pokedex:import-encounters --translate-locations` | Deutsche Ortsnamen mitladen (deutlich mehr Requests) |
+| `pokedex:fill-gaps --dry-run` | Zeigen, für welche Arten die PokéAPI keinen Fundort kennt |
+| `pokedex:fill-gaps --remove` | Die angenommenen Einträge wieder entfernen |
 | `pokedex:import-sources datei.csv` | Kuratierte Bezugsquellen aus CSV nachladen |
 | `pokedex:import-go datei.csv` | GO-Verfügbarkeit und Regionalexklusive aus CSV nachladen |
 | `pokedex:icons` | PWA-Icons neu erzeugen |

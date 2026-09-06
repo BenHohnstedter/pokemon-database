@@ -53,11 +53,16 @@ class GoAvailabilitySeeder extends Seeder
 
     public function run(): void
     {
+        $gesetzt = 0;
+        $fehlend = [];
+
         foreach (self::REGIONAL_EXCLUSIVES as $slug => [$method, $regions]) {
             $pokemon = Pokemon::where('slug', $slug)->first();
 
             if ($pokemon === null) {
-                continue; // Art noch nicht importiert – beim nächsten Lauf erneut versuchen.
+                $fehlend[] = $slug;
+
+                continue;
             }
 
             GoAvailability::updateOrCreate(
@@ -69,6 +74,29 @@ class GoAvailabilitySeeder extends Seeder
                     'note' => 'Regional exklusiv – außerhalb der Region nur per GO-Tausch.',
                 ],
             );
+
+            $gesetzt++;
         }
+
+        // Ohne diesen Hinweis bliebe es unbemerkt, wenn der Seeder vor dem
+        // Import läuft: er findet dann keine Art und legt stillschweigend
+        // nichts an – die Prioritäts-Engine rechnet danach ohne GO-Daten.
+        $this->warnIfSkipped($gesetzt, $fehlend);
+    }
+
+    /** @param  array<int,string>  $fehlend */
+    private function warnIfSkipped(int $gesetzt, array $fehlend): void
+    {
+        if ($fehlend === [] || $this->command === null) {
+            return;
+        }
+
+        $this->command->warn(sprintf(
+            'GoAvailabilitySeeder: %d von %d Einträgen gesetzt, %d übersprungen '
+            .'(Art noch nicht importiert). Nach `pokedex:import` erneut ausführen.',
+            $gesetzt,
+            count(self::REGIONAL_EXCLUSIVES),
+            count($fehlend),
+        ));
     }
 }

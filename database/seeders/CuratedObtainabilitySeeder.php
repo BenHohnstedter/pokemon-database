@@ -95,6 +95,18 @@ class CuratedObtainabilitySeeder extends Seeder
         $games = Game::query()->pluck('id', 'slug');
         $pokemon = Pokemon::query()->pluck('id', 'slug');
 
+        // Ohne diesen Hinweis bliebe es unbemerkt, wenn der Seeder vor dem
+        // Import läuft: er findet dann keine Art und legt stillschweigend
+        // nichts an – Starter und Fossilien fehlten danach als Bezugsquelle.
+        if ($pokemon->isEmpty() && $this->command !== null) {
+            $this->command->warn(
+                'CuratedObtainabilitySeeder: keine Pokémon in der Datenbank – '
+                .'nach `pokedex:import` erneut ausführen.'
+            );
+
+            return;
+        }
+
         $this->seedGroup(self::STARTERS, $games, $pokemon, ObtainMethod::Gift, Difficulty::Leicht, 'Starter-Pokémon zu Spielbeginn');
         $this->seedGroup(self::FOSSILS, $games, $pokemon, ObtainMethod::Fossil, Difficulty::Mittel, 'Fossil wiederbeleben');
 
