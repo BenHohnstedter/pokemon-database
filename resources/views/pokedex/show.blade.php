@@ -22,8 +22,15 @@
 
     <div class="grid gap-6 lg:grid-cols-3">
 
+        {{--
+            min-w-0 ist hier zwingend: Grid-Elemente haben standardmäßig
+            min-width:auto und schrumpfen deshalb nicht unter ihren Inhalt.
+            Die Bezugsquellen-Tabelle hat min-w-[36rem] – ohne min-w-0 hätte
+            sie die ganze Seite auf dem Handy in den Querlauf geschoben, statt
+            ihr eigenes overflow-x-auto zu nutzen.
+        --}}
         {{-- ── Formen mit Besitz-Toggles (spec.md 2.2, 2.5) ────────────────── --}}
-        <div class="space-y-4">
+        <div class="min-w-0 space-y-4">
             @foreach ($formen as $eintrag)
                 @php $form = $eintrag->form; @endphp
 
@@ -123,7 +130,7 @@
         </div>
 
         {{-- ── Bezugsquellen (spec.md 2.3) ─────────────────────────────────── --}}
-        <div class="space-y-4 lg:col-span-2">
+        <div class="min-w-0 space-y-4 lg:col-span-2">
             <div class="pixel-panel p-4">
                 <h2 class="font-pixel text-xs uppercase text-dex-accent">Wo bekomme ich es?</h2>
 
