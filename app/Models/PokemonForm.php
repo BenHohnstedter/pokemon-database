@@ -43,6 +43,12 @@ class PokemonForm extends Model
     /**
      * Eigene Typen dieser Form. Nur Regional- und Sonderformen haben welche –
      * die Basisform nutzt die Typen des Pokémon.
+     *
+     * Nur zum Lesen: `attach()` über diese Relation setzt `pokemon_id` nicht,
+     * das die Pivot-Tabelle aber verlangt. Zeilen schreibt der Import direkt
+     * (siehe ImportPokedexCommand::syncTypes). `withPivotValue` wäre hier keine
+     * Lösung, weil die Bedingung beim Eager Loading vom ersten Modell stammen
+     * und dann für alle gelten würde.
      */
     public function types(): BelongsToMany
     {
