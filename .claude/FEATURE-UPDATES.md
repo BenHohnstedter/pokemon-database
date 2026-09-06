@@ -151,3 +151,45 @@ auf 219; beim Demo-Nutzer sanken die 🔴-Fälle von 88 auf 58.
 Titel ist kein Remake — die Spiegelung greift dort nicht. Die Hisui-Liste müsste von Hand
 aus Bulbapedia nachgetragen werden. Praktische Auswirkung ist gering, weil der
 Sinnoh-Bestand inzwischen über BDSP abgedeckt ist.
+
+### 8. Spielansicht listet nur normale Formen
+
+In der Spiel-für-Spiel-Ansicht standen Regionalformen in der Liste — unter
+Ultrasonne etwa das Alola-Rattfratz statt Rattfratz. Ursache war ein
+`keyBy(pokemon_id)` über Basis-, Regional- und Sonderformen: pro Art überlebte
+die zuletzt einsortierte Form.
+
+Die Zuordnung ist jetzt explizit. Fundorte hängen bei uns an der **Art**, nicht
+an einer Form — von 8.256 Zeilen zeigt keine einzige auf eine Form. Eine solche
+Quelle gehört zur normalen Form: „Vulpix in Rot" heißt nicht, dass es dort auch
+das Alola-Vulpix gäbe. Regionalformen erscheinen deshalb nur, wenn ein Fundort
+ausdrücklich auf genau diese Form zeigt.
+
+Dazu ein Schalter „Regionalformen mit anzeigen". Anders als im Pokédex hängt er
+nicht an `count_regional_in_total`: diese Seite beantwortet „was kann ich hier
+fangen?", und das ist eine Frage auf Artebene.
+
+### 9. Poké Transporter als eigene Hürde vor Pokémon Bank
+
+Vom Nutzer gemeldet: Aus den älteren Generationen kommt man nicht einfach so zu
+Pokémon Bank, dafür braucht es zusätzlich die 3DS-App **Poké Transporter**.
+
+Das stimmt und war bisher nicht abgebildet:
+
+| Generation | Weg zu Pokémon Bank |
+|---|---|
+| 6 und 7 (X/Y, ORAS, S/M, USUM) | lädt selbst hoch — kein Transporter |
+| 5 (Schwarz/Weiß, S2/W2) | Poké Transporter |
+| 1 und 2 (Virtual Console) | Poké Transporter |
+| 3 und 4 | Pal Park / Poké-Transfer → Gen 5 → Poké Transporter |
+
+Wer die App nicht hat, kommt aus diesen Titeln **überhaupt nicht** nach HOME —
+für den ist die Bank-Frist dort gegenstandslos, weil schon die Stufe davor
+fehlt. Solche Quellen fallen deshalb ganz heraus, statt als 🔴 zu erscheinen,
+und zwar mit eigener Begründung, damit der Unterschied zu einem echten
+„Event vorbei" sichtbar bleibt. Auch ein besessenes Spiel hilft dann nicht mehr:
+🟢 „einfach" wäre gelogen, wenn das Gefangene nie in HOME ankommt.
+
+Neu sind `games.needs_transporter` und die Einstellung `has_poke_transporter`,
+**Standard true** — für Bestandsnutzer ändert sich nichts, bis sie den Schalter
+umlegen.
