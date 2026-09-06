@@ -48,17 +48,31 @@ Kurzer Stand je Session/Phase. Neuester Eintrag oben. Am Ende jeder Session aktu
 - Dusk-Tests für den Kernflow geschrieben — **noch nicht ausgeführt**, siehe unten
 - GitHub Actions: Pest, Pint, Vite-Build, Dusk gegen MySQL
 
-### Nachtrag: MySQL steht, Vollimport ist durch
+### Nachtrag: MySQL steht, Vollimport ist komplett durch
 
 - Alle Migrations laufen sauber gegen MySQL (`migrate:fresh`), Stammdaten geseedet.
-- **1025 Arten und 1082 Formen importiert**, davon 57 Regionalformen. Der Fundort-Import
-  lief zum Zeitpunkt dieses Eintrags noch.
-- Der PokéAPI-Plattencache ist warm (~2.800 Dateien), ein erneuter Import ist deshalb
-  deutlich schneller als die ~40 Minuten des ersten Laufs.
+- **1025 Arten, 1082 Formen** (57 Regionalformen), **18 Typen, 39 Spiele, 28 Orden**.
+- **Fundorte importiert**, danach `pokedex:fill-gaps` und `pokedex:recalculate`.
+- Der PokéAPI-Plattencache ist warm, ein erneuter Import ist deshalb deutlich schneller
+  als die ~40 Minuten des ersten Laufs.
+
+**Verteilung über den echten Dex** (Basisformen, ohne Spielebesitz):
+
+| Stufe | Anzahl |
+|---|---|
+| 🟡 Kaufbar | 644 |
+| 🔴 Bank-Deadline | 352 |
+| ⚪ Tausch/Community | 15 |
+| 🟠 Alte Hardware | 8 |
+| 🟢 Einfach | 6 |
+
+Mit Karmesin + Schwert + Sonne im Besitz: 692 einfach, 235 Bank-Deadline, 77 kaufbar.
+Die Engine tut also genau das, was sie soll – die Zahl der dringenden Fälle hängt
+direkt am eingetragenen Spielebesitz.
 
 ### Fehler, die erst der echte Datenbestand gezeigt hat
 
-Der Vollimport hat vier Fehler sichtbar gemacht, die kein Unit-Test gefunden hätte:
+Der Vollimport hat sechs Fehler sichtbar gemacht, die kein Unit-Test gefunden hätte:
 
 1. **Pikachu stand als „Elektro/Elektro" da, Mauzi als „Normal/Unlicht/Stahl".**
    Die Typen der Regionalformen hängen an derselben Pivot-Tabelle, und `Pokemon::types()`
@@ -69,8 +83,16 @@ Der Vollimport hat vier Fehler sichtbar gemacht, die kein Unit-Test gefunden hä
 3. **Der Typensammler-Orden** rechnete einem besessenen Mauzi auch Stahl und Unlicht an.
 4. **14 von 151 Gen-1-Arten galten fälschlich als 🔴 bank-kritisch**, weil der Umweg über
    die Vorstufe nicht bzw. nur einen Schritt weit mitgerechnet wurde. Nach der Korrektur: 1.
+5. **0 GO-Einträge nach dem Vollimport.** `CuratedObtainabilitySeeder` und
+   `GoAvailabilitySeeder` hängen ihre Einträge an konkrete Pokémon. Die Reihenfolge im
+   `DatabaseSeeder` legt nahe, sie vor dem Import laufen zu lassen – dann finden sie
+   nichts und legen stillschweigend nichts an. Beide melden das jetzt.
+6. **Die PokéAPI hat für Gen 9 fast keine Fundortdaten** (6 Einträge für über hundert
+   Arten). Dadurch landete fast die komplette neunte Generation auf ⚪ statt auf 🟡.
+   `pokedex:fill-gaps` schließt die Lücke mit klar gekennzeichneten Annahmen; die Zahl
+   der Arten ohne jeden Weg fiel damit von 143 auf 15.
 
-Alle vier sind behoben und durch Regressionstests abgedeckt. Der Import räumt jetzt
+Alle sechs sind behoben und durch Regressionstests abgedeckt. Der Import räumt jetzt
 außerdem auf: eine einmal falsch angelegte Form verschwindet beim nächsten Lauf.
 
 ### Zwei Fehleinstufungen, die ein Testimport aufgedeckt hat
@@ -95,16 +117,18 @@ als 🔴 Bank-kritisch meldete:
 - **Dusk** braucht das Asset-Bundle plus einen laufenden Server und ist deshalb noch
   ungetestet. Die Testdatei steht, die Selektoren (`dusk="..."`) sind gesetzt.
 
-### Performance — noch nicht belastbar gemessen
+### Performance
 
-`PokedexQuery::evaluate()` bewertet den kompletten Dex in 10–11 Queries. Erste Messungen
-gegen MySQL schwanken zwischen 500 ms und 3,8 s, allerdings lief dabei der Fundort-Import
-parallel und blockierte die Datenbank. Die Aufteilung war: Formen laden ~200 ms (warm),
-Bezugsquellen laden ~260 ms, Engine selbst nur ~140 ms für 1025 Arten.
+`PokedexQuery::evaluate()` bewertet den kompletten Dex (1025 Basisformen) in **9 Queries**
+und rund **830 ms** gegen MySQL unter XAMPP, gemessen ohne Nebenlast. Der Löwenanteil ist
+das Hydrieren der Modelle; die Prioritäts-Engine selbst braucht nur ~140 ms. Die Typen
+werden bereits nur noch für die 60 angezeigten Karten nachgeladen.
 
-**Offen:** eine saubere Messung ohne Nebenlast. Falls es dann zu langsam bleibt, ist der
-naheliegende Schritt, die Bewertung auf eine schlanke Query-Builder-Abfrage umzustellen
-und die vollen Eloquent-Modelle nur für die 60 Einträge der aktuellen Seite zu laden.
+Das ist brauchbar, aber nicht schnell. **Wenn es stört**, ist der nächste Schritt, die
+Bewertung auf eine schlanke Query-Builder-Abfrage umzustellen (nur die Spalten, die die
+Engine braucht) und die vollen Eloquent-Modelle erst für die aktuelle Seite zu laden.
+Das ist ein spürbarer Umbau der Engine-Schnittstelle, deshalb bewusst nicht vorgezogen,
+solange niemand über Ladezeiten klagt.
 
 ### Offene inhaltliche Punkte
 
@@ -126,11 +150,15 @@ und die vollen Eloquent-Modelle nur für die 60 Einträge der aktuellen Seite zu
 
 ### Nächste Schritte
 
-1. Node installieren, `npm install && npm run build`, App im Browser durchklicken
-2. `pokedex:recalculate` nach Abschluss des Fundort-Imports laufen lassen
-3. Performance ohne Nebenlast messen (siehe oben)
-4. Dusk-Suite ausführen und ggf. Selektoren nachziehen
-5. Spieleliste und GO-Daten gegen Bulbapedia/Serebii verifizieren
+1. **Node installieren**, `npm install && npm run build` – danach ist die App im Browser
+   benutzbar. Das ist der einzige verbleibende Blocker.
+2. Dusk-Suite ausführen und ggf. Selektoren nachziehen
+3. Eigenen Spielebesitz in den Einstellungen eintragen – erst dann sind die
+   Dringlichkeitsstufen aussagekräftig
+4. Spieleliste und GO-Daten gegen Bulbapedia/Serebii verifizieren; GO-Vollbestand per
+   `pokedex:import-go` aus einer CSV nachladen
+5. Echte Fundorte für Gen 8/9 per `pokedex:import-sources` nachliefern und danach
+   `pokedex:fill-gaps --remove` ausführen
 6. Repo nach GitHub pushen (vorher noch einmal auf Persönliches gegenprüfen, spec.md 10)
 
 ---
