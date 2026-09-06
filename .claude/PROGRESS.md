@@ -48,6 +48,31 @@ Kurzer Stand je Session/Phase. Neuester Eintrag oben. Am Ende jeder Session aktu
 - Dusk-Tests für den Kernflow geschrieben — **noch nicht ausgeführt**, siehe unten
 - GitHub Actions: Pest, Pint, Vite-Build, Dusk gegen MySQL
 
+### Nachtrag: MySQL steht, Vollimport ist durch
+
+- Alle Migrations laufen sauber gegen MySQL (`migrate:fresh`), Stammdaten geseedet.
+- **1025 Arten und 1082 Formen importiert**, davon 57 Regionalformen. Der Fundort-Import
+  lief zum Zeitpunkt dieses Eintrags noch.
+- Der PokéAPI-Plattencache ist warm (~2.800 Dateien), ein erneuter Import ist deshalb
+  deutlich schneller als die ~40 Minuten des ersten Laufs.
+
+### Fehler, die erst der echte Datenbestand gezeigt hat
+
+Der Vollimport hat vier Fehler sichtbar gemacht, die kein Unit-Test gefunden hätte:
+
+1. **Pikachu stand als „Elektro/Elektro" da, Mauzi als „Normal/Unlicht/Stahl".**
+   Die Typen der Regionalformen hängen an derselben Pivot-Tabelle, und `Pokemon::types()`
+   filterte `pokemon_form_id` nicht heraus.
+2. **„Pikachu (Alola-Form)" wurde angelegt** – die gibt es gar nicht. Der Slug
+   `pikachu-alola-cap` ist eine Mützen-Variante und rutschte über den Regionsvergleich
+   herein; dasselbe galt für `darmanitan-galar-zen` (Trance-Modus).
+3. **Der Typensammler-Orden** rechnete einem besessenen Mauzi auch Stahl und Unlicht an.
+4. **14 von 151 Gen-1-Arten galten fälschlich als 🔴 bank-kritisch**, weil der Umweg über
+   die Vorstufe nicht bzw. nur einen Schritt weit mitgerechnet wurde. Nach der Korrektur: 1.
+
+Alle vier sind behoben und durch Regressionstests abgedeckt. Der Import räumt jetzt
+außerdem auf: eine einmal falsch angelegte Form verschwindet beim nächsten Lauf.
+
 ### Zwei Fehleinstufungen, die ein Testimport aufgedeckt hat
 
 Der Import der ersten 151 Arten hat gezeigt, dass die Engine anfangs 14 Arten fälschlich
@@ -67,10 +92,19 @@ als 🔴 Bank-kritisch meldete:
   Die Views sind vollständig geschrieben und rendern in den Tests (dort mit `withoutVite()`),
   aber im Browser fehlt bislang das CSS/JS-Bundle. **Nächster Schritt:** Node LTS
   installieren, dann `npm install && npm run build`.
-- **MySQL läuft nicht.** Alle Migrations, Seeder und Tests sind gegen SQLite verifiziert;
-  die Migrations sind MySQL-kompatibel geschrieben, aber noch nicht gegen MySQL gelaufen.
-  **Nächster Schritt:** XAMPP-MySQL starten, `pokemon_database` anlegen, `php artisan migrate`.
-- **Dusk** braucht beides plus einen laufenden Server und ist deshalb noch ungetestet.
+- **Dusk** braucht das Asset-Bundle plus einen laufenden Server und ist deshalb noch
+  ungetestet. Die Testdatei steht, die Selektoren (`dusk="..."`) sind gesetzt.
+
+### Performance — noch nicht belastbar gemessen
+
+`PokedexQuery::evaluate()` bewertet den kompletten Dex in 10–11 Queries. Erste Messungen
+gegen MySQL schwanken zwischen 500 ms und 3,8 s, allerdings lief dabei der Fundort-Import
+parallel und blockierte die Datenbank. Die Aufteilung war: Formen laden ~200 ms (warm),
+Bezugsquellen laden ~260 ms, Engine selbst nur ~140 ms für 1025 Arten.
+
+**Offen:** eine saubere Messung ohne Nebenlast. Falls es dann zu langsam bleibt, ist der
+naheliegende Schritt, die Bewertung auf eine schlanke Query-Builder-Abfrage umzustellen
+und die vollen Eloquent-Modelle nur für die 60 Einträge der aktuellen Seite zu laden.
 
 ### Offene inhaltliche Punkte
 
@@ -93,8 +127,8 @@ als 🔴 Bank-kritisch meldete:
 ### Nächste Schritte
 
 1. Node installieren, `npm install && npm run build`, App im Browser durchklicken
-2. MySQL starten, Datenbank anlegen, gegen MySQL migrieren und seeden
-3. Vollimport laufen lassen (`pokedex:import` → `import-encounters` → `recalculate`)
+2. `pokedex:recalculate` nach Abschluss des Fundort-Imports laufen lassen
+3. Performance ohne Nebenlast messen (siehe oben)
 4. Dusk-Suite ausführen und ggf. Selektoren nachziehen
 5. Spieleliste und GO-Daten gegen Bulbapedia/Serebii verifizieren
 6. Repo nach GitHub pushen (vorher noch einmal auf Persönliches gegenprüfen, spec.md 10)
