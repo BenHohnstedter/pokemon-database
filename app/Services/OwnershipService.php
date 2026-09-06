@@ -118,7 +118,7 @@ class OwnershipService
         } else {
             // Beim Zurücknehmen die Punkte wieder abziehen, sonst ließe sich
             // das Level durch Hin- und Herklicken hochtreiben.
-            $user->decrement('xp', min($xp, $user->xp));
+            $user->decrement('xp', min($xp, (int) ($user->xp ?? 0)));
         }
 
         $this->achievements->sync($user->refresh());
@@ -161,7 +161,7 @@ class OwnershipService
         if ($owned) {
             $user->increment('xp', $xp);
         } else {
-            $user->decrement('xp', min($xp, $user->xp));
+            $user->decrement('xp', min($xp, (int) ($user->xp ?? 0)));
         }
     }
 }

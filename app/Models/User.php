@@ -38,6 +38,19 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    /**
+     * Die Spaltendefaults greifen erst in der Datenbank – ein frisch angelegtes
+     * Modell hätte xp sonst als null, und die XP-Verrechnung liefe auf einen
+     * Fehler. Hier stehen sie deshalb auch am Modell.
+     *
+     * @var array<string,mixed>
+     */
+    protected $attributes = [
+        'xp' => 0,
+        'login_streak' => 0,
+        'profile_public' => false,
+    ];
+
     /** @return array<string, string> */
     protected function casts(): array
     {
