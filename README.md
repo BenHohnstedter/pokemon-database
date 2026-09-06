@@ -24,6 +24,7 @@ was davon eine tickende Uhr hat.*
 | **Formen** | Regionalformen und Shiny als eigene Fortschrittsbalken, per Einstellung in den Hauptbalken einrechenbar |
 | **Pokémon GO** | Regionalexklusivität gegen die eigene Weltregion abgeglichen; ein GO-Weg entschärft die Bank-Deadline |
 | **Masseneingabe** | `1-50,60-63,700` als Freitext, mit Vorschau vor dem Übernehmen |
+| **Sichern & Übertragen** | Sammlungsstand als JSON exportieren und wieder einspielen – zum Umziehen oder als Sicherung vor Massenaktionen |
 | **Gamification** | Trainer-Level, Orden, Trainerkarte im GameBoy-Stil, 8-Bit-Sounds, optionaler Chiptune-Loop |
 | **Statistik & Social** | Fortschritt nach Typ/Generation, Zuwachs pro Monat, Bestenliste mit Freundesliste |
 | **PWA** | Auf dem Handy als App installierbar |
@@ -147,7 +148,9 @@ php artisan test
 Die Unit- und Feature-Tests laufen gegen SQLite in-memory und brauchen weder MySQL noch einen
 Asset-Build.
 
-Die Browser-Tests (Dusk) brauchen beides plus einen laufenden Server:
+Die Browser-Tests (Dusk) brauchen zusätzlich **Google Chrome** (Edge reicht dem
+mitgelieferten ChromeDriver nicht), eine eigene Datenbank und einen laufenden
+Server:
 
 ```bash
 cp .env.dusk.local.example .env.dusk.local
@@ -208,6 +211,22 @@ Daraus ergibt sich:
 | 🟠 Alte Hardware | altes Spiel nötig, aber es gibt einen Weg ohne Bank (z.B. über GO) |
 | 🔴 Bank-Deadline | der einzige Weg nach HOME führt über Pokémon Bank |
 | ⚪ Tausch/Community | Event vorbei oder kein regulärer Fangweg mehr |
+
+### Die Bank-Frist hängt nicht an der Stufe
+
+Ein Pokémon kann **🟢 einfach und trotzdem fristgebunden** sein: Wer Pokémon
+Schwarz besitzt, fängt es jederzeit — muss es aber vor dem Stichtag über Pokémon
+Bank nach HOME schieben. Deshalb trägt jedes Ergebnis ein eigenes
+Deadline-Kennzeichen, unabhängig von der Stufe.
+
+Das Dashboard trennt die beiden Gruppen entsprechend:
+
+- **⏳ Kannst Du selbst holen – aber vor der Deadline**: Spiel ist da, es fehlt
+  nur die Übertragung.
+- **🔴 Dafür fehlt Dir noch Spiel oder Konsole**: erst beschaffen, dann übertragen.
+
+Im Pokédex zeigt der Filter *„Nur was an der Bank-Deadline hängt"* beide Gruppen
+zusammen, und betroffene Karten tragen ein ⏳.
 
 Fehlen für ein Pokémon die GO-Daten, rechnet die Engine **bewusst konservativ** ohne
 GO-Rettungsweg — bei einer Deadline ist eine Warnung zu viel besser als eine zu wenig.
