@@ -2,6 +2,61 @@
 
 Kurzer Stand je Session/Phase. Neuester Eintrag oben. Am Ende jeder Session aktualisieren.
 
+## 2026-09-06 — Die App läuft, Feedback eingearbeitet, Tests vollständig
+
+### Lauffähig
+
+- **Node 24.20.0 LTS** portabel nach `E:\xampp\nodejs` installiert (offizielles ZIP,
+  Prüfsumme verifiziert). `npm install && npm run build` läuft, die App ist im Browser
+  benutzbar.
+- **Chrome for Testing 152.0.7977.82** portabel nach `E:\xampp\chrome-win64` — auf dem
+  Rechner war nur Edge, den der mitgelieferte ChromeDriver nicht steuern kann.
+  `DUSK_CHROME_BINARY` in `.env.dusk.local` zeigt darauf.
+- MySQL läuft, Vollbestand importiert (1025 Arten, 1082 Formen).
+
+### Feedback aus dem Ausprobieren, alles umgesetzt
+
+1. **Die Bank-Frist verschwand, sobald man das Spiel besaß.** Größter fachlicher Fehler
+   der bisherigen Umsetzung — Details in `FEATURE-UPDATES.md`. Am echten Bestand:
+   404 betroffene Pokémon statt vorher sichtbarer 88.
+2. **„Kaufbar" → „Spiel fehlt Dir noch"** (die alte Beschriftung las sich, als wäre das
+   Pokémon käuflich).
+3. **Einträge pro Seite** einstellbar: 30/60/120/240.
+4. **Export/Import des Sammlungsstands** als JSON über Form-Slugs.
+5. **Öffentliches Profil** (spec.md 2.11, war als optional geführt) — damit hängt jetzt
+   auch etwas an der bis dahin ungenutzten Spalte `profile_public`.
+
+### Tests: 262 grün
+
+- **252 Unit-/Feature-Tests** (705 Assertions), laufen gegen SQLite in-memory ohne
+  Asset-Build.
+- **10 Dusk-Browsertests** (113 Assertions): der Kernflow aus spec.md 7 komplett
+  (Registrieren → Login → markieren → Fortschritt → Logout), dazu Masseneingabe,
+  Deadline-Filter, Theme-Wechsel, Seitengröße, Export-Seite — und ein Responsive-Test,
+  der neun Seiten über fünf Breiten abfährt.
+
+Beim erstmaligen Ausführen von Dusk fielen vier Dinge auf, die alle behoben sind:
+fehlender Chrome, Textsuche scheitert am `uppercase` des Retro-Designs (Selenium liefert
+den gerenderten Text), der statische Dex-Zähler der Factory überlebt das Leeren der
+Tabellen, und `assertAttribute('html', …)` sucht innerhalb von `body`.
+
+### Zwei echte Layoutfehler gefunden und behoben
+
+- Die Kartenkomponente rendert in der Gast-Ansicht **zwei `class`-Attribute** nebeneinander
+  — der Browser verwirft das zweite stillschweigend, wodurch die komplette Basis-Optik
+  fehlte.
+- Die **Detailseite lief auf dem Handy über** (255 px bei 375 px Breite): Die
+  Bezugsquellen-Tabelle hat `min-w-[36rem]` in einem `overflow-x-auto`-Container, aber
+  Grid-Elemente haben `min-width:auto` und schrumpfen nicht unter ihren Inhalt. `min-w-0`
+  auf den Spalten löst es.
+
+### Weiterhin offen
+
+- Spieleliste und GO-Daten gegen Bulbapedia/Serebii verifizieren (siehe unten).
+- Feuerrot/Blattgrün für Switch fehlt im `GameSeeder`, weil der Titel nicht belastbar
+  bekannt ist.
+- Kein Push nach GitHub — bislang nur lokale Commits.
+
 ## 2026-09-06 — Erste Umsetzungs-Session: Phasen 1–7 im Kern gebaut
 
 ### Was steht
