@@ -166,6 +166,6 @@
             </div>
         </section>
 
-        <button type="submit" class="pixel-button">Speichern</button>
+        <button type="submit" dusk="einstellungen-speichern" class="pixel-button">Speichern</button>
     </form>
 </x-app-layout>

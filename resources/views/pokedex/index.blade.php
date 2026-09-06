@@ -133,7 +133,7 @@
             </label>
 
             <div class="ml-auto flex gap-2">
-                <button type="submit" class="pixel-button">Filtern</button>
+                <button type="submit" dusk="filter-anwenden" class="pixel-button">Filtern</button>
                 @if ($filter->isActive())
                     <a href="{{ route('pokedex.index') }}" class="pixel-button-ghost">Zurücksetzen</a>
                 @endif

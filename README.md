@@ -164,6 +164,11 @@ npm run build && php artisan serve
 php artisan dusk
 ```
 
+Ist kein Chrome installiert, tut es auch eine portable
+[Chrome-for-Testing](https://googlechromelabs.github.io/chrome-for-testing/)-Version
+— Pfad in `.env.dusk.local` unter `DUSK_CHROME_BINARY` eintragen (unter Windows
+mit Schrägstrichen, dotenv deutet Backslashes als Escape-Zeichen).
+
 > Dusk **leert** die in `.env.dusk.local` konfigurierte Datenbank bei jedem Lauf — dort niemals
 > die Entwicklungsdatenbank eintragen.
 

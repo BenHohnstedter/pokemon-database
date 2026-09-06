@@ -41,7 +41,7 @@
                     </div>
                 </fieldset>
 
-                <button type="submit" class="pixel-button mt-5">Vorschau anzeigen</button>
+                <button type="submit" dusk="vorschau-anzeigen" class="pixel-button mt-5">Vorschau anzeigen</button>
             </form>
 
             {{-- ── Vorschau vor dem Übernehmen (spec.md 2.5) ───────────────── --}}
@@ -91,7 +91,7 @@
                             @csrf
                             <input type="hidden" name="eingabe" value="{{ $eingabe }}">
                             <input type="hidden" name="aktion" value="{{ $aktion }}">
-                            <button type="submit" class="pixel-button">
+                            <button type="submit" dusk="massen-uebernehmen" class="pixel-button">
                                 Ja, {{ count($treffer) }} Pokémon übernehmen
                             </button>
                         </form>

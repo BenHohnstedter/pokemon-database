@@ -33,6 +33,10 @@ pest()->extend(TestCase::class)
 */
 pest()->extend(DuskTestCase::class)
     ->use(DatabaseTruncation::class)
+    // Der Dex-Zähler der Factory ist statisch und überlebt das Leeren der
+    // Tabellen – ohne Reset bekäme der zweite Test im selben Prozess
+    // Dex-Nummern, die nicht mehr bei 1 beginnen.
+    ->beforeEach(fn () => resetDexSequence())
     ->in('Browser');
 
 /*

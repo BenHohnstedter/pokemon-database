@@ -38,6 +38,17 @@ abstract class DuskTestCase extends BaseTestCase
             ]);
         })->all());
 
+        /*
+        | Ohne installiertes Chrome findet der ChromeDriver keinen Browser und
+        | bricht mit "cannot find Chrome binary" ab. DUSK_CHROME_BINARY erlaubt
+        | es, auf eine portable "Chrome for Testing"-Version zu zeigen – so
+        | läuft die Suite auch auf einem Rechner, auf dem nur Edge installiert
+        | ist (siehe README, Abschnitt Tests).
+        */
+        if ($binary = env('DUSK_CHROME_BINARY')) {
+            $options->setBinary($binary);
+        }
+
         return RemoteWebDriver::create(
             $_ENV['DUSK_DRIVER_URL'] ?? env('DUSK_DRIVER_URL') ?? 'http://localhost:9515',
             DesiredCapabilities::chrome()->setCapability(

@@ -74,7 +74,8 @@
                             </a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <button type="submit" class="block w-full px-4 py-2 text-left hover:bg-dex-soft/50">
+                                <button type="submit" dusk="abmelden"
+                                        class="block w-full px-4 py-2 text-left hover:bg-dex-soft/50">
                                     Abmelden
                                 </button>
                             </form>
