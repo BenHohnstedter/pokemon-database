@@ -292,3 +292,9 @@ Gesteuert wird das über `games.needs_transporter` und die Einstellung
 
 Privates Fan-Projekt ohne kommerzielle Absicht. Nicht als offizielles Produkt ausgeben,
 nicht verkaufen.
+
+Das App-Icon (Pokéball) stammt von
+[Andreuvv](https://commons.wikimedia.org/wiki/User:Andreuvv), Datei
+[Poké Ball icon.svg](https://commons.wikimedia.org/wiki/File:Pok%C3%A9_Ball_icon.svg)
+aus Wikimedia Commons. Einzelheiten zu Lizenz und Marke stehen in
+[`public/icons/HERKUNFT.md`](public/icons/HERKUNFT.md).

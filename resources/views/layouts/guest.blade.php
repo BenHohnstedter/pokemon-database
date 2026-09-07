@@ -16,7 +16,8 @@
 
     <title>{{ $title ?? config('app.name') }}</title>
 
-    {{-- Icon in Tab und Lesezeichenleiste. Erzeugt `php artisan pokedex:icons`. --}}
+    {{-- Icon in Tab und Lesezeichenleiste. Herkunft siehe public/icons/HERKUNFT.md. --}}
+    <link rel="icon" type="image/svg+xml" href="{{ asset('icons/pokeball.svg') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('icons/favicon-32.png') }}">
     <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('icons/icon-192.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('icons/icon-192.png') }}">
