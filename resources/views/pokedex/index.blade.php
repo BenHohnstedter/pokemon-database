@@ -170,7 +170,13 @@
             </p>
         </div>
     @else
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+        {{--
+            Sechs Spalten sind das Maximum, nicht der Startwert: eine Box auf der
+            Switch fasst genau sechs pro Reihe, und daneben abzugleichen ist der
+            Sinn der Liste. Auf dem Handy bleiben es zwei bzw. drei — dort steht
+            keine Konsole daneben, und sechs Karten auf 375px wären unlesbar.
+        --}}
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6">
             @foreach ($paginator as $row)
                 <x-pokemon-card :row="$row" :interactive="auth()->check()" />
             @endforeach

@@ -44,6 +44,18 @@ it('zeigt Regionalformen, wenn der Nutzer sie anfordert', function () {
         ->assertSee('Alola-Form');
 });
 
+it('stellt höchstens sechs Pokémon nebeneinander', function () {
+    // Eine Box auf der Switch fasst sechs pro Reihe – daneben abzugleichen ist
+    // der Sinn der Liste (FEATURE-UPDATES.md 10).
+    Pokemon::factory()->withBaseForm()->create(['name_de' => 'Bisasam']);
+
+    $html = $this->get(route('pokedex.index'))->assertOk()->getContent();
+
+    expect($html)->toContain('md:grid-cols-6')
+        ->and($html)->not->toContain('grid-cols-8')
+        ->and($html)->not->toContain('grid-cols-7');
+});
+
 it('filtert nach Suchbegriff', function () {
     Pokemon::factory()->withBaseForm()->create(['name_de' => 'Bisasam']);
     Pokemon::factory()->withBaseForm()->create(['name_de' => 'Glumanda']);
