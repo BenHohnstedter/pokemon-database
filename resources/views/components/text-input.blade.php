@@ -1,3 +1,4 @@
 @props(['disabled' => false])
 
-<input @disabled($disabled) {{ $attributes->merge(['class' => 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm']) }}>
+{{-- Dunkel wie der Rest der App: .pixel-input holt sich die Theme-Farben. --}}
+<input @disabled($disabled) {{ $attributes->merge(['class' => 'pixel-input']) }}>

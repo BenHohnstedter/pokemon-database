@@ -15,6 +15,9 @@
 
     {{-- PWA: installierbar auf dem Homescreen (spec.md 6, 7) --}}
     <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
+    {{-- Icon in Tab und Lesezeichenleiste. Erzeugt `php artisan pokedex:icons`. --}}
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('icons/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('icons/icon-192.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('icons/icon-192.png') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])

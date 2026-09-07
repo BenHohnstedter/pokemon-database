@@ -160,6 +160,43 @@
         background-color: rgb(var(--dex-panel-soft) / 0.6);
     }
 
+    /* Löschen, Konto entfernen: gleiche Form, andere Farbe. */
+    .pixel-button-danger {
+        @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-pixel uppercase transition-transform;
+        background-color: rgb(var(--dex-danger));
+        color: rgb(var(--dex-shadow));
+        border: 3px solid rgb(var(--dex-shadow));
+        box-shadow: 3px 3px 0 0 rgb(var(--dex-shadow));
+    }
+
+    .pixel-button-danger:hover {
+        transform: translate(1px, 1px);
+        box-shadow: 2px 2px 0 0 rgb(var(--dex-shadow));
+    }
+
+    .pixel-button-danger:active {
+        transform: translate(3px, 3px);
+        box-shadow: none;
+    }
+
+    /*
+    | Checkboxen kommen aus @tailwindcss/forms mit weißem Grund und rundem
+    | Rahmen. Auf dunklem Panel ist das ein Leuchtfleck, deshalb eckig und in
+    | den Theme-Farben.
+    */
+    .pixel-checkbox {
+        @apply h-4 w-4;
+        background-color: rgb(var(--dex-bg));
+        border: 2px solid rgb(var(--dex-border));
+        border-radius: 0;
+        color: rgb(var(--dex-accent));
+    }
+
+    .pixel-checkbox:focus {
+        border-color: rgb(var(--dex-accent));
+        box-shadow: none;
+    }
+
     .pixel-input {
         @apply w-full px-3 py-2 text-sm;
         background-color: rgb(var(--dex-bg));
