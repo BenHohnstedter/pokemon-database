@@ -2,6 +2,62 @@
 
 Kurzer Stand je Session/Phase. Neuester Eintrag oben. Am Ende jeder Session aktualisieren.
 
+## 2026-09-07 — Lokales Setup auf dem neuen Rechner, Boxraster, dunkle Konto-Seiten
+
+### Das Projekt läuft jetzt unter `C:/xampp`
+
+Erstaufsetzen auf einer Maschine, auf der XAMPP noch **PHP 7.4.29** mitbringt —
+Laravel 12 braucht ≥ 8.2. Statt XAMPP anzufassen läuft es wie beim
+Nachbarprojekt sah-inventory: Apache reicht `.php` per FastCGI an das
+vorhandene **PHP 8.3.33** unter `C:/php83` weiter, hier auf Port **9124**.
+
+Aufrufbar ist die App unter **http://localhost/dex-rescue** — kein eigener
+vHost, sondern ein `Alias` unter dem normalen localhost. Damit bleiben htdocs,
+phpMyAdmin und die anderen Projekte unangetastet. Der Front-Controller hängt
+bewusst an einer `FallbackResource` in der Apache-Konfiguration statt an einer
+angepassten `.htaccess`: So bleibt die Maschinen-Konfiguration aus dem
+öffentlichen Repo heraus.
+
+Zwei Stolpersteine, die wiederkommen können:
+
+- **`SetHandler "proxy:fcgi://…"` braucht unter Windows den Schrägstrich am
+  Ende.** Ohne ihn klebt Apache den Dateipfad direkt an den Port
+  (`…:9124C:/xampp/…`) und antwortet mit *400 URI cannot be parsed*.
+- **Kein CA-Bundle in der `php.ini` von PHP 8.3.** Der PokéAPI-Import brach mit
+  *cURL error 60* ab. `curl.cainfo`/`openssl.cafile` zeigen jetzt auf ein
+  Bundle neben der PHP-Installation.
+
+Start- und Stoppskripte liegen als `start-dex-rescue.bat` bzw.
+`stop-dex-rescue.bat` im XAMPP-Verzeichnis, also außerhalb des Repos — das
+XAMPP-Control-Panel kennt den PHP-8.3-Prozess nicht.
+
+### Vom Nutzer gewünscht, umgesetzt
+
+1. **Höchstens sechs Pokémon nebeneinander** (FEATURE-UPDATES.md 10). Eine Box
+   auf der Switch fasst sechs pro Reihe; das Raster ging bis `xl:grid-cols-8`
+   und lief damit am Abgleich vorbei. Auf dem Handy bleiben zwei bzw. drei
+   Spalten. Die Spielansicht listet untereinander und bleibt unverändert.
+2. **Login, Registrierung und Profil sind nicht mehr weiß**
+   (FEATURE-UPDATES.md 11). Umgestellt sind nicht nur die Seiten, sondern die
+   gemeinsamen Breeze-Bausteine — sie brachten `bg-white`/`text-gray-700` mit
+   und hätten das Weiß sonst jeder neuen Seite zurückgegeben.
+3. **Favicon** in Tab und Lesezeichenleiste. Das Icon lag längst unter
+   `public/icons/favicon-32.png`, nur verlinkt hat es keiner.
+
+### Tests: 299 grün
+
+293 vorher, sechs neu: fünf in `DarkUiTest` (keine hellen Breeze-Klassen mehr
+in Login, Registrierung und Profil; Pixel-Bausteine vorhanden; Favicon
+verlinkt) und einer im `PokedexTest` fürs Sechserraster.
+
+### Weiterhin offen
+
+- **Die Konto-Seiten sind noch auf Englisch** („Email", „Log in", „Remember
+  me"). Breeze liefert die Texte über `__()`, es gibt aber keine `lang/de.json`.
+  Dunkel sind sie jetzt, deutsch noch nicht.
+- Die Punkte aus der vorigen Session (Legenden-Fundorte, formspezifische
+  Fundorte) stehen unverändert.
+
 ## 2026-09-07 — Formen-Schalter, Poké Transporter, Spielansicht geschärft
 
 ### Vom Nutzer gemeldet, umgesetzt

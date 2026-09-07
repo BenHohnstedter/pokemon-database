@@ -193,3 +193,37 @@ und zwar mit eigener Begründung, damit der Unterschied zu einem echten
 Neu sind `games.needs_transporter` und die Einstellung `has_poke_transporter`,
 **Standard true** — für Bestandsnutzer ändert sich nichts, bis sie den Schalter
 umlegen.
+
+---
+
+## 2026-09-07 — Boxraster und dunkle Konto-Seiten
+
+### 10. Der Pokédex zeigt höchstens sechs Pokémon nebeneinander
+
+Vom Nutzer gewünscht: Eine Box auf der Switch fasst **sechs Pokémon pro Reihe**.
+Wer nebeneinander abgleicht, was in HOME steht und was die App anzeigt, zählt
+sonst dauernd um. Das Raster im Pokédex ging bisher bis `xl:grid-cols-8` und
+lief damit an der Box vorbei.
+
+Neu ist bei sechs Schluss — auf großen Schirmen wird die Karte breiter, nicht
+die Reihe länger. Auf dem Handy bleiben es zwei bzw. drei Spalten: eine
+Sechserreihe auf 375px wäre nicht mehr lesbar, und dort vergleicht ohnehin
+niemand mit der Konsole nebendran.
+
+Die Spielansicht bleibt, wie sie ist — sie listet untereinander mit Fundort und
+Methode je Zeile, dort gibt es kein Raster zum Ausrichten.
+
+### 11. Login, Registrierung und Profil sind nicht mehr weiß
+
+Vom Nutzer gemeldet: Diese Seiten waren „komplett weiß" — sie stammten noch
+unverändert aus dem Breeze-Gerüst, während der Rest der App im dunklen
+Pixel-Theme läuft. Wer sich einloggt, bekam also erst eine grelle weiße Seite
+und danach die dunkle App.
+
+Umgestellt sind nicht nur die Seiten, sondern die **gemeinsamen Bausteine**
+(`x-text-input`, `x-input-label`, `x-primary-button`, `x-secondary-button`,
+`x-danger-button`, `x-input-error`, `x-modal`, …). Sie sind der eigentliche
+Grund: Solange die Komponenten `bg-white` und `text-gray-700` mitbringen, holt
+sich jede neue Seite das Weiß automatisch zurück. Die Bausteine benutzen jetzt
+dieselben CSS-Variablen wie der Rest (`--dex-*`), womit auch die vier Themes
+(Standard, Game Boy, Game Boy Pocket, CRT-Amber) auf diesen Seiten greifen.
