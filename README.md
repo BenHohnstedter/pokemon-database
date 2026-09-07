@@ -18,7 +18,7 @@ was davon eine tickende Uhr hat.*
 | Bereich | Kurz |
 |---|---|
 | **Pokédex** | Alle Arten mit deutschen Namen, Typen, Artwork, Shiny-Sprite und Entwicklungskette |
-| **Prioritäts-Engine** | Sechs Dringlichkeitsstufen von 🟢 *einfach* bis 🔴 *Bank-Deadline*, berechnet aus Spielebesitz, GO-Region und den echten Transferwegen nach HOME |
+| **Prioritäts-Engine** | Sechs Dringlichkeitsstufen von 🟢 *einfach* bis 🔴 *Bank-Deadline*, berechnet aus Spielebesitz, GO-Region und den echten Transferwegen nach HOME — inklusive Poké Transporter |
 | **Bezugsquellen** | Pro Pokémon: welches Spiel, welche Methode, welche Route, welcher Weg nach HOME — die eigenen Spiele stehen zuerst |
 | **Spiel für Spiel** | „Ich bin jetzt in diesem Spiel": alles auflisten, was dort noch fehlt, und direkt in der Liste abhaken |
 | **Mehrfach-Fang** | „Fange 3× Bisasam: 1× so lassen, 1× zu Bisaknosp entwickeln …" — für Stufen, die nur durch Entwicklung erreichbar sind |
@@ -247,6 +247,28 @@ zusammen, und betroffene Karten tragen ein ⏳.
 
 Fehlen für ein Pokémon die GO-Daten, rechnet die Engine **bewusst konservativ** ohne
 GO-Rettungsweg — bei einer Deadline ist eine Warnung zu viel besser als eine zu wenig.
+
+### Poké Transporter: die Stufe vor der Bank
+
+Nicht jedes Bank-Spiel hängt gleich direkt an Pokémon Bank. Generation 6 und 7
+laden selbst hoch; alles Ältere braucht zusätzlich die 3DS-App **Poké
+Transporter**:
+
+| Generation | Weg zu Pokémon Bank |
+|---|---|
+| 6 und 7 (X/Y, ORAS, S/M, USUM) | lädt selbst hoch — kein Transporter |
+| 5 (Schwarz/Weiß, S2/W2) | Poké Transporter |
+| 1 und 2 (Virtual Console) | Poké Transporter |
+| 3 und 4 | Pal Park / Poké-Transfer → Gen 5 → Poké Transporter |
+
+Wer die App nicht hat, kommt aus diesen Titeln **überhaupt nicht** nach HOME. Die
+Engine wirft solche Quellen dann ganz heraus, statt sie als 🔴 zu führen: Eine
+Frist auf einem verschlossenen Weg hilft niemandem, und auch 🟢 wäre gelogen —
+das Gefangene käme nie in HOME an. Die Begründung sagt in dem Fall ausdrücklich,
+dass es am Transporter liegt und nicht an einem abgelaufenen Event.
+
+Gesteuert wird das über `games.needs_transporter` und die Einstellung
+**„Ich habe die 3DS-App Poké Transporter"**, Standard *ja*.
 
 ---
 

@@ -98,3 +98,35 @@ it('nennt die Bank-Frist auf der Seite eines Altspiels', function () {
             ->assertSee('Du hast dieses Spiel nicht eingetragen.');
     });
 });
+
+it('zeigt ein Gen-5-Spiel ohne Poké Transporter als Sackgasse', function () {
+    $this->seed(GameSeeder::class);
+
+    $spiel = Game::where('slug', 'black-2')->firstOrFail();
+    $pokemon = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Kapilz']);
+
+    Obtainability::factory()->create([
+        'pokemon_id' => $pokemon->id,
+        'game_id' => $spiel->id,
+        'location_detail' => 'Route 14',
+    ]);
+
+    $user = User::factory()->create();
+    $user->settingsOrDefault()->update(['has_poke_transporter' => false]);
+    $user->games()->attach($spiel);
+
+    $this->browse(function (Browser $browser) use ($user, $spiel) {
+        $browser->loginAs($user)
+            ->visit('/spiele')
+            // Keine Frist, wo der Weg ohnehin verschlossen ist …
+            ->waitForText('Poké Transporter fehlt Dir')
+            // … für Gen 6 und 7 gilt sie dagegen weiter: die laden selbst zu
+            // Bank hoch. Beide Zustände stehen hier auf derselben Seite.
+            ->assertSee('Transfer über Pokémon Bank')
+
+            ->visit('/spiele/'.$spiel->id)
+            ->waitForText('Route 14')
+            ->assertSee('Poké Transporter')
+            ->assertDontSee('26.02.2027');
+    });
+});

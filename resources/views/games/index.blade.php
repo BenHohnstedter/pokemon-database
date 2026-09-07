@@ -61,6 +61,11 @@
                         <p class="mt-1 text-[10px] text-dex-muted">
                             @if ($spiel->home_compatible && ! $spiel->bank_only)
                                 direkt an HOME
+                            @elseif ($spiel->bank_only && $spiel->needs_transporter && ! $hatTransporter)
+                                {{-- Keine Frist, wo der Weg ohnehin verschlossen ist. --}}
+                                <span>Sackgasse – Poké Transporter fehlt Dir</span>
+                            @elseif ($spiel->bank_only && $spiel->needs_transporter)
+                                <span class="text-dex-danger">Poké Transporter → Pokémon Bank</span>
                             @elseif ($spiel->bank_only)
                                 <span class="text-dex-danger">Transfer über Pokémon Bank</span>
                             @else

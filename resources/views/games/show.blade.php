@@ -33,19 +33,42 @@
     </x-slot>
 
     {{-- Wie kommt das Gefangene nach HOME? Der wichtigste Kontext beim Abarbeiten. --}}
+    @php
+        // Ohne die App endet der Weg vor Pokémon Bank – dann ist nicht die
+        // Frist das Problem, sondern die Stufe davor.
+        $sackgasse = $game->bank_only && $game->needs_transporter && ! $hatTransporter;
+    @endphp
+
     <div @class([
         'pixel-panel mb-6 p-4 text-sm',
-        'border-dex-danger' => $game->bank_only,
+        'border-dex-danger' => $game->bank_only && ! $sackgasse,
         'border-dex-success/70' => $game->home_compatible && ! $game->bank_only,
     ])>
         @if ($game->home_compatible && ! $game->bank_only)
             <p class="text-dex-success">
                 Dieses Spiel hängt direkt an Pokémon HOME – keine Frist, kein Umweg.
             </p>
+        @elseif ($sackgasse)
+            <p>
+                Aus diesem Spiel kommst Du derzeit <strong>gar nicht</strong> nach HOME: Der
+                Weg liefe über <strong>Poké Transporter</strong> zu Pokémon Bank, und diese
+                App hast Du laut Deinen Einstellungen nicht. Die Liste unten zeigt weiterhin,
+                was hier vorkommt – für HOME zählt es aber nicht, und die Bank-Frist ist
+                deshalb hier gegenstandslos.
+            </p>
+            <p class="mt-1 text-xs text-dex-muted">
+                <a href="{{ route('settings.edit') }}" class="underline">Doch vorhanden?</a>
+                Dann in den Einstellungen umstellen.
+            </p>
         @elseif ($game->bank_only)
             <p class="text-dex-danger">
-                Alles aus diesem Spiel muss über <strong>Pokémon Bank</strong> nach HOME –
-                und das geht nur noch bis zum 26.02.2027.
+                Alles aus diesem Spiel muss
+                @if ($game->needs_transporter)
+                    über <strong>Poké Transporter</strong> zu <strong>Pokémon Bank</strong>
+                @else
+                    über <strong>Pokémon Bank</strong>
+                @endif
+                nach HOME – und das geht nur noch bis zum 26.02.2027.
             </p>
         @else
             <p class="text-dex-muted">

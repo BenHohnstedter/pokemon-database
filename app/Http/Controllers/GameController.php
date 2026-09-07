@@ -30,6 +30,9 @@ class GameController extends Controller
             'spiele' => Game::ordered()->get()->groupBy('generation'),
             'besesseneSpiele' => $user->games()->pluck('games.id')->all(),
             'offeneJeSpiel' => $this->offeneJeSpiel($user),
+            // Ohne Poké Transporter ist ein Gen-1-bis-5-Titel keine Frist mehr,
+            // sondern eine Sackgasse – das gehört dorthin, wo man danach handelt.
+            'hatTransporter' => (bool) $user->settingsOrDefault()->has_poke_transporter,
             // Ohne diese Zahl ließen sich "alles gefangen" und "für diesen
             // Titel sind gar keine Fundorte hinterlegt" nicht unterscheiden –
             // beides käme als 0 an, und die Übersicht würde für Pokémon GO
@@ -94,6 +97,7 @@ class GameController extends Controller
                 && $quellen->flatten()->whereNotNull('pokemon_form_id')->isEmpty(),
             'gesamtImSpiel' => $quellen->count(),
             'besitztSpiel' => $user->games()->where('games.id', $game->id)->exists(),
+            'hatTransporter' => (bool) $user->settingsOrDefault()->has_poke_transporter,
         ]);
     }
 

@@ -36,6 +36,8 @@
                                     <span class="block text-[10px] text-dex-muted">
                                         {{ $spiel->platform->label() }}
                                         @if ($spiel->bank_only) · über Bank @endif
+                                        {{-- Macht sichtbar, welche Titel am Schalter unten hängen. --}}
+                                        @if ($spiel->needs_transporter) · Transporter nötig @endif
                                         @if ($spiel->still_purchasable) · im Handel @endif
                                     </span>
                                 </span>

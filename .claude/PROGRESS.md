@@ -2,6 +2,81 @@
 
 Kurzer Stand je Session/Phase. Neuester Eintrag oben. Am Ende jeder Session aktualisieren.
 
+## 2026-09-07 — Formen-Schalter, Poké Transporter, Spielansicht geschärft
+
+### Vom Nutzer gemeldet, umgesetzt
+
+1. **Die Spielansicht zeigte Regionalformen** — unter Ultrasonne etwa das
+   Alola-Rattfratz statt Rattfratz. Ursache war ein `keyBy(pokemon_id)` über
+   Basis-, Regional- und Sonderformen: pro Art überlebte die zuletzt
+   einsortierte Form. Standard ist jetzt „nur normale Formen", dazu ein
+   Schalter. Regionalformen erscheinen nur mit eigenem Fundort — und wo es
+   keinen gibt, sagt die Seite das, statt still dieselbe Liste zu zeigen.
+2. **Feuerrot/Blattgrün laufen über HOME, nicht über Bank** — der Nutzer besitzt
+   die Switch-Version. Deren Einträge waren in seinem Profil noch nicht
+   angehakt; nachgetragen. Die GBA-Häkchen blieben stehen (unklar, ob die Module
+   noch da sind — ändert am Ergebnis nichts).
+3. **Poké Transporter** als eigene Hürde vor Pokémon Bank (Details in
+   `FEATURE-UPDATES.md` 9). Der Nutzer hat die App nicht; entsprechend gesetzt.
+
+### Wirkung auf den echten Bestand (Konto „Ben")
+
+| Kennzahl | vorher | nachher |
+|---|---|---|
+| 🔴 dringend, Spiel fehlt | 58 | 2 |
+| an der Bank-Frist gesamt | 372 | 67 |
+| davon selbst holbar | 314 | 65 |
+
+Die verbleibenden 67 sind genau die richtigen: X, Alpha Saphir, Mond und
+Ultrasonne sind Gen 6/7 und laden direkt zu Bank hoch — dort ist die Frist real
+und die Liste abarbeitbar. Ho-Oh und Lugia stehen über Feuerrot (Switch) auf 🟢
+ohne Frist.
+
+### Der Transporter-Zustand steht dort, wo gehandelt wird
+
+Nicht nur in der Engine: Spielübersicht, Spielseite, Bezugsquellen-Tabelle und
+die Spieleliste in den Einstellungen unterscheiden jetzt drei Fälle statt zwei —
+direkt an HOME, „Poké Transporter → Bank", und „Sackgasse, Transporter fehlt
+Dir". Ein Gen-5-Titel ohne die App ist für den Nutzer keine Frist mehr, sondern
+ein verschlossener Weg, und genau so liest sich die Seite jetzt auch.
+
+### Tests: 293 + 13 grün
+
+- **293 Unit-/Feature-Tests** (833 Assertions), neu: Poké-Transporter-Logik in
+  der Engine (7), Transporter in der Spielansicht (4), Regionalformen in der
+  Spielansicht (4), „keine Fundorte" vs. „alles gefangen" (2).
+- **13 Dusk-Browsertests** (96 Assertions), neu: Gen-5-Spiel ohne Transporter
+  als Sackgasse, gleichzeitig mit einem Gen-6-Titel, für den die Frist weiter
+  gilt — beide Zustände auf derselben Seite.
+
+### Weiterhin offen
+
+- **Legenden: Arceus hat nur 3 Fundorte.** Die PokéAPI liefert keine
+  Encounter-Daten, und der Titel ist kein Remake — die Spiegelung greift nicht.
+  Bewusst nicht geraten: ein erfundener Fundort in einem HOME-Spiel würde
+  Erreichbarkeit vortäuschen, und das ist vor einer Frist der teuerste Fehler.
+  Gehört von Hand aus Bulbapedia nachgetragen.
+- **Keine formspezifischen Fundorte.** Von 8.256 Zeilen zeigt keine auf eine
+  Form, deshalb bleibt der Regionalformen-Schalter in der Spielansicht vorerst
+  wirkungslos. Alola-, Galar-, Hisui- und Paldea-Formen hängen real an
+  bestimmten Titeln — das wäre der nächste sinnvolle Datensatz.
+- **GO-Datensatz ist ein Kern (21 Einträge)**, kein Vollbestand.
+- **Titel und Erscheinungsjahr der Switch-Neuauflage** von Feuerrot/Blattgrün
+  sind geschätzt.
+- Spieleliste im Übrigen gegen Bulbapedia/Serebii verifizieren, besonders
+  `still_purchasable`.
+- Fundorte sind englisch, solange `pokedex:import-encounters` ohne
+  `--translate-locations` läuft.
+- Kein Push nach GitHub — bislang nur lokale Commits (so abgestimmt).
+
+### Nächste Schritte
+
+1. Formspezifische Fundorte für Regionalformen nachtragen (`pokemon_form_id`),
+   dann wird der Formen-Schalter in der Spielansicht nutzbar
+2. Hisui-Bestand für Legenden: Arceus nachtragen, danach `pokedex:recalculate`
+3. GO-Vollbestand per `pokedex:import-go` aus einer gepflegten CSV
+4. Repo nach GitHub pushen (vorher auf Persönliches gegenprüfen, spec.md 10)
+
 ## 2026-09-06 — Spielansicht, Quellen-Gruppierung, Remake-Daten
 
 ### Vom Nutzer gemeldet, umgesetzt

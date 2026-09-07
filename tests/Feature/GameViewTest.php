@@ -293,3 +293,54 @@ it('behält den Formen-Schalter beim Umschalten auf "Alle anzeigen"', function (
         // Im Markup steht das & escaped – geprüft wird der Link, wie er im HTML landet.
         ->assertSee(e(route('games.show', [$game, 'offen' => 0, 'formen' => 1])), escape: false);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Poké Transporter in der Spielansicht
+|--------------------------------------------------------------------------
+*/
+
+it('nennt ein Gen-5-Spiel ohne Transporter eine Sackgasse statt einer Frist', function () {
+    $game = GameFactory::new()->needsTransporter()->create(['name_de' => 'Schwarz 2']);
+    $this->user->settingsOrDefault()->update(['has_poke_transporter' => false]);
+
+    $this->actingAs($this->user)
+        ->get(route('games.show', $game))
+        ->assertOk()
+        ->assertSee('Poké Transporter')
+        ->assertSee('gar nicht', escape: false)
+        ->assertDontSee('26.02.2027');
+});
+
+it('behält die Frist, wenn der Transporter vorhanden ist', function () {
+    $game = GameFactory::new()->needsTransporter()->create(['name_de' => 'Schwarz 2']);
+
+    $this->actingAs($this->user)
+        ->get(route('games.show', $game))
+        ->assertOk()
+        ->assertSee('26.02.2027')
+        ->assertSee('Poké Transporter');
+});
+
+it('lässt Gen-6-Titel von der Transporter-Frage unberührt', function () {
+    $game = GameFactory::new()->bankOnly()->create(['name_de' => 'X']);
+    $this->user->settingsOrDefault()->update(['has_poke_transporter' => false]);
+
+    $this->actingAs($this->user)
+        ->get(route('games.show', $game))
+        ->assertOk()
+        // X lädt selbst zu Bank hoch – die Frist gilt weiter.
+        ->assertSee('26.02.2027')
+        ->assertDontSee('Poké Transporter');
+});
+
+it('markiert Sackgassen auch in der Spielübersicht', function () {
+    GameFactory::new()->needsTransporter()->create(['name_de' => 'Schwarz 2']);
+    $this->user->settingsOrDefault()->update(['has_poke_transporter' => false]);
+
+    $this->actingAs($this->user)
+        ->get(route('games.index'))
+        ->assertOk()
+        ->assertSee('Sackgasse')
+        ->assertDontSee('Transfer über Pokémon Bank');
+});

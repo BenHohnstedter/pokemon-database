@@ -1,5 +1,11 @@
 @props(['quellen'])
 
+@php
+    // Ohne Poké Transporter endet der Weg aus Gen 1–5 vor Pokémon Bank. Die
+    // Einstellungen sind auf dem User-Model gecacht, das kostet keine Query je Zeile.
+    $hatTransporter = auth()->user()?->settingsOrDefault()->has_poke_transporter ?? true;
+@endphp
+
 {{-- Bezugsquellen als Tabelle (spec.md 2.3). --}}
 <div {{ $attributes->merge(['class' => 'pixel-scroll-x']) }}>
     <table class="w-full min-w-[36rem] text-left text-sm">
@@ -40,6 +46,12 @@
                     <td class="py-2 text-[11px]">
                         @if ($quelle->game->home_compatible && ! $quelle->game->bank_only)
                             <span class="text-dex-success">direkt an HOME</span>
+                        @elseif ($quelle->game->bank_only && $quelle->game->needs_transporter && ! $hatTransporter)
+                            <span class="text-dex-muted" title="Ohne die 3DS-App gibt es aus diesem Spiel keinen Weg nach HOME">
+                                Poké Transporter fehlt
+                            </span>
+                        @elseif ($quelle->game->bank_only && $quelle->game->needs_transporter)
+                            <span class="text-dex-danger">Transporter → Bank</span>
                         @elseif ($quelle->game->bank_only)
                             <span class="text-dex-danger">über Pokémon Bank</span>
                         @else
