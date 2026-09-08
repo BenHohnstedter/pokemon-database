@@ -3,9 +3,16 @@ import forms from '@tailwindcss/forms';
 
 /** @type {import('tailwindcss').Config} */
 export default {
+    /*
+    | Bewusst OHNE './storage/framework/views/*.php': Das ist der kompilierte
+    | Blade-Cache und damit maschinenlokal. Wer die App vorher im Browser
+    | benutzt hat, baut ein anderes CSS als ein frischer Checkout -- hier
+    | zuletzt 51,8 kB gegenüber 39,1 kB auf dem CI-Runner. Alle Klassen stehen
+    | ohnehin in den Blade-Quellen darunter; der Cache fügt nichts hinzu,
+    | was hier fehlt, macht den Build aber unreproduzierbar.
+    */
     content: [
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
-        './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
         './resources/js/**/*.js',
     ],

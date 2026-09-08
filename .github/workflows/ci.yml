@@ -205,10 +205,25 @@ jobs:
         run: |
           echo "===== storage/logs/laravel.log (letzte 200 Zeilen) ====="
           tail -n 200 storage/logs/laravel.log 2>/dev/null || echo "(keine)"
-          echo "===== storage/logs/serve.log ====="
-          cat storage/logs/serve.log 2>/dev/null || echo "(keine)"
           echo "===== Browser-Konsole ====="
           tail -n 50 tests/Browser/console/*.log 2>/dev/null || echo "(keine)"
+
+          # Dusk legt bei jedem Fehlschlag den Seitenquelltext ab. Der
+          # entscheidet die wichtigste Frage: Stand der gesuchte Text gar nicht
+          # im HTML (dann liegt es an App oder Daten) oder stand er drin und war
+          # nur nicht sichtbar (dann am CSS)?
+          echo "===== Seitenquelltext der Fehlschläge ====="
+          for f in tests/Browser/source/*.txt; do
+            [ -e "$f" ] || { echo "(keine Quelltexte)"; break; }
+            echo "----- $f ($(wc -c < "$f") Bytes) -----"
+            echo "  Navigation vorhanden : $(grep -c 'Menü umschalten' "$f" || true)"
+            echo "  Wort 'Pokédex'       : $(grep -c 'Pokédex' "$f" || true)"
+            echo "  Zähler im Markup     :"
+            grep -oE '>[0-9]+/[0-9]+<' "$f" | head -n 5 | sed 's/^/    /' || true
+            echo "  <body>-Anfang:"
+            sed -n 's/.*<body/<body/p' "$f" | head -c 1200
+            echo
+          done
 
       - name: Screenshots bei Fehlschlag sichern
         if: failure()
@@ -218,4 +233,6 @@ jobs:
           path: |
             tests/Browser/screenshots
             tests/Browser/console
+            tests/Browser/source
             storage/logs
+            public/build
