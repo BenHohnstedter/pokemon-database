@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Difficulty;
 use App\Enums\FormType;
+use App\Enums\ObtainMethod;
 use App\Models\Game;
 use App\Models\Obtainability;
 use App\Services\PokedexQuery;
@@ -74,6 +76,7 @@ class GameController extends Controller
                 $bewertet->get($pokemonId) ?? collect(),
                 $quellenDerArt,
             ))
+            ->concat($this->zeilenUeberEntwicklung($game, $bewertet, collect($quellen)->keys()))
             ->when($nurOffene, fn (Collection $c) => $c->reject(fn (object $row) => $row->owned))
             // Nach Dex-Nummer, und innerhalb einer Art die normale Form zuerst.
             ->sortBy(fn (object $row) => sprintf(
@@ -151,6 +154,67 @@ class GameController extends Controller
                 ];
             })
             ->filter()
+            ->values();
+    }
+
+    /**
+     * Arten, die hier zwar nicht zu fangen sind, aber aus etwas entstehen, das
+     * es hier gibt.
+     *
+     * Vom Nutzer gemeldet: Legenden: Arceus listete Feurigel, nicht aber
+     * Igelavar und Tornupto -- dabei ist die Linie mit dem Starter in der Hand
+     * komplett abarbeitbar. Wer vor der Konsole sitzt, will genau das wissen:
+     * was kriege ich in dieser Sitzung voll?
+     *
+     * Grundlage ist `source_pokemon_id`, das `pokedex:recalculate` bis zur
+     * Basis der Linie durchzieht -- fuer Tornupto steht dort Feurigel, nicht
+     * Igelavar. Es genuegt also, diese eine Spalte gegen die Arten des Spiels
+     * zu halten.
+     *
+     * @param  Collection<int,Collection<int,object>>  $bewertet  je Art die bewerteten Formen
+     * @param  Collection<int,int>  $direkteArten  Arten mit eigener Bezugsquelle hier
+     * @return Collection<int,object>
+     */
+    private function zeilenUeberEntwicklung(Game $game, Collection $bewertet, Collection $direkteArten): Collection
+    {
+        $vorhanden = $direkteArten->flip();
+
+        return $bewertet
+            ->reject(fn (Collection $formen, int $pokemonId) => $vorhanden->has($pokemonId))
+            ->flatMap(function (Collection $formen) use ($game, $vorhanden) {
+                return $formen
+                    ->filter(fn (object $row) => $row->form->form_type === FormType::Base)
+                    ->filter(function (object $row) use ($vorhanden) {
+                        $pokemon = $row->form->pokemon;
+
+                        return ! $pokemon->obtainable_directly
+                            && $pokemon->source_pokemon_id !== null
+                            && $pokemon->source_pokemon_id !== $pokemon->id
+                            && $vorhanden->has($pokemon->source_pokemon_id);
+                    })
+                    ->map(function (object $row) use ($game) {
+                        $basis = $row->form->pokemon->sourcePokemon;
+
+                        return (object) [
+                            'form' => $row->form,
+                            'owned' => $row->owned,
+                            'ownedShiny' => $row->ownedShiny,
+                            'favourite' => $row->favourite,
+                            'priority' => $row->priority,
+                            // Nicht gespeichert: Die Zeile beschreibt keinen
+                            // Fundort, sondern einen Weg, der sich aus der Linie
+                            // ergibt. In der Datenbank waere sie Redundanz, die
+                            // beim naechsten Import auseinanderlaeuft.
+                            'quelle' => (new Obtainability([
+                                'method' => ObtainMethod::Evolution->value,
+                                'location_detail' => $basis !== null
+                                    ? "Entwicklung aus {$basis->name_de}"
+                                    : 'Entwicklung aus einer Vorstufe von hier',
+                                'difficulty' => Difficulty::Mittel->value,
+                            ]))->setRelation('game', $game),
+                        ];
+                    });
+            })
             ->values();
     }
 

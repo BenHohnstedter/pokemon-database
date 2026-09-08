@@ -344,3 +344,58 @@ it('markiert Sackgassen auch in der Spielübersicht', function () {
         ->assertSee('Sackgasse')
         ->assertDontSee('Transfer über Pokémon Bank');
 });
+
+it('zeigt auch, was sich hier aus einer Vorstufe entwickeln lässt', function () {
+    // Vom Nutzer gemeldet: Legenden: Arceus listete Feurigel, nicht aber
+    // Igelavar und Tornupto — dabei ist die Linie mit dem Starter in der Hand
+    // komplett abarbeitbar (FEATURE-UPDATES.md 21).
+    $spiel = GameFactory::new()->create(['name_de' => 'Legenden: Arceus', 'generation' => 8]);
+
+    $basis = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Feurigel']);
+    $stufe2 = Pokemon::factory()->withBaseForm()->create([
+        'name_de' => 'Igelavar',
+        'obtainable_directly' => false,
+        'source_pokemon_id' => $basis->id,
+    ]);
+
+    Obtainability::factory()->create([
+        'pokemon_id' => $basis->id,
+        'game_id' => $spiel->id,
+        'method' => ObtainMethod::Gift->value,
+        'location_detail' => 'Starter-Pokémon zu Spielbeginn',
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('games.show', $spiel))
+        ->assertOk()
+        ->assertSee('Feurigel')
+        ->assertSee('Igelavar')
+        ->assertSee('Entwicklung aus Feurigel');
+
+    expect($stufe2->fresh()->obtainable_directly)->toBeFalse();
+});
+
+it('führt eine Art nicht doppelt, wenn sie hier auch selbst vorkommt', function () {
+    $spiel = GameFactory::new()->create(['name_de' => 'Schwert', 'generation' => 8]);
+
+    $basis = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Feurigel']);
+    $stufe2 = Pokemon::factory()->withBaseForm()->create([
+        'name_de' => 'Igelavar',
+        'obtainable_directly' => false,
+        'source_pokemon_id' => $basis->id,
+    ]);
+
+    foreach ([$basis, $stufe2] as $art) {
+        Obtainability::factory()->create([
+            'pokemon_id' => $art->id,
+            'game_id' => $spiel->id,
+            'method' => ObtainMethod::Wild->value,
+            'location_detail' => 'Route 1',
+        ]);
+    }
+
+    $html = $this->actingAs($this->user)->get(route('games.show', $spiel))->assertOk()->getContent();
+
+    expect(substr_count($html, 'Igelavar'))->toBe(substr_count($html, 'Feurigel'))
+        ->and($html)->not->toContain('Entwicklung aus');
+});
