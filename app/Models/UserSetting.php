@@ -23,7 +23,7 @@ class UserSetting extends Model
         'user_id', 'go_region',
         'count_regional_in_total', 'count_shiny_in_total',
         'owns_3ds', 'owns_switch', 'has_poke_transporter', 'theme', 'per_page',
-        'sound_effects_enabled', 'music_enabled', 'music_volume', 'reduce_motion',
+        'sound_effects_enabled', 'reduce_motion',
     ];
 
     protected $attributes = [
@@ -34,8 +34,6 @@ class UserSetting extends Model
         'theme' => 'default',
         'per_page' => 60,
         'sound_effects_enabled' => true,
-        'music_enabled' => false,
-        'music_volume' => 35,
     ];
 
     protected function casts(): array
@@ -47,7 +45,6 @@ class UserSetting extends Model
             'owns_switch' => 'boolean',
             'has_poke_transporter' => 'boolean',
             'sound_effects_enabled' => 'boolean',
-            'music_enabled' => 'boolean',
             'reduce_motion' => 'boolean',
             'go_region' => GoRegion::class,
         ];

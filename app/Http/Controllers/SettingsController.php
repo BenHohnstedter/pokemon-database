@@ -45,8 +45,6 @@ class SettingsController extends Controller
             'owns_switch' => ['boolean'],
             'has_poke_transporter' => ['boolean'],
             'sound_effects_enabled' => ['boolean'],
-            'music_enabled' => ['boolean'],
-            'music_volume' => ['integer', 'min:0', 'max:100'],
             'reduce_motion' => ['boolean'],
             'profile_public' => ['boolean'],
             'spiele' => ['array'],
@@ -66,8 +64,6 @@ class SettingsController extends Controller
             'owns_switch' => $request->boolean('owns_switch'),
             'has_poke_transporter' => $request->boolean('has_poke_transporter'),
             'sound_effects_enabled' => $request->boolean('sound_effects_enabled'),
-            'music_enabled' => $request->boolean('music_enabled'),
-            'music_volume' => $validated['music_volume'] ?? 35,
             'reduce_motion' => $request->boolean('reduce_motion'),
         ]);
 

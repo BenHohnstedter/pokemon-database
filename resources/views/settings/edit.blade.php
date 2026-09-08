@@ -167,18 +167,6 @@
                 </label>
 
                 <label class="flex items-center gap-3">
-                    <input type="checkbox" name="music_enabled" value="1" @checked($settings->music_enabled)
-                           class="border-2 border-dex-border bg-dex-bg text-dex-accent focus:ring-0">
-                    Chiptune-Hintergrundmusik (Standard: aus)
-                </label>
-
-                <label for="music_volume" class="block max-w-sm">
-                    <span class="mb-1 block text-xs uppercase text-dex-muted">Lautstärke</span>
-                    <input type="range" id="music_volume" name="music_volume" min="0" max="100"
-                           value="{{ $settings->music_volume }}" class="w-full accent-dex-accent">
-                </label>
-
-                <label class="flex items-center gap-3">
                     <input type="checkbox" name="reduce_motion" value="1" @checked($settings->reduce_motion)
                            class="border-2 border-dex-border bg-dex-bg text-dex-accent focus:ring-0">
                     Animationen reduzieren

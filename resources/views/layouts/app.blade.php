@@ -23,16 +23,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen antialiased"
-      x-data="dexAudio({
-          music: {{ $dexSettings?->music_enabled ? 'true' : 'false' }},
-          volume: {{ $dexSettings?->music_volume ?? 35 }},
-          tracks: {{ Js::from(collect(config('pokedex.music', []))->map(fn (array $s) => [
-              'datei' => asset($s['datei']),
-              'titel' => $s['titel'],
-              'urheber' => $s['urheber'],
-          ])) }}
-      })">
+<body class="min-h-screen antialiased">
 
     <a href="#inhalt"
        class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 pixel-button">

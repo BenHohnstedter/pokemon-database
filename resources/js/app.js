@@ -1,7 +1,7 @@
 import './bootstrap';
 
 import Alpine from 'alpinejs';
-import { music, sfx } from './retro-audio';
+import { sfx } from './retro-audio';
 
 window.Alpine = Alpine;
 
@@ -101,53 +101,6 @@ function dexToggle(config) {
     };
 }
 
-/** Audio-Einstellungen des Nutzers, global im Layout eingehängt. */
-function dexAudio(config) {
-    return {
-        musicOn: config.music,
-        volume: config.volume,
-        titel: '',
-
-        init() {
-            music.setTracks(config.tracks ?? []);
-            music.setVolume(this.volume);
-            this.titel = music.titel();
-
-            // Autoplay ist gesperrt, bis der Nutzer irgendwo geklickt hat.
-            if (this.musicOn) {
-                document.addEventListener('click', () => this.starteMusik(), { once: true });
-            }
-        },
-
-        starteMusik() {
-            if (this.musicOn) {
-                music.setVolume(this.volume);
-                music.start(this.volume / 100);
-            }
-        },
-
-        umschalten() {
-            this.musicOn = !this.musicOn;
-            this.musicOn ? this.starteMusik() : music.stop();
-        },
-
-        /**
-         * Nächstes Stück. Schaltet die Musik gleich mit ein, wenn sie aus war —
-         * wer weiterklickt, will hören und nicht erst zwei Schalter finden.
-         */
-        weiter() {
-            music.next();
-            this.titel = music.titel();
-
-            if (! this.musicOn) {
-                this.musicOn = true;
-            }
-
-            this.starteMusik();
-        },
-    };
-}
-
 /** Pixel-Konfetti bei Meilensteinen (spec.md 2.9). */
 function feiereMeilenstein(anzahl = 28) {
     if (document.documentElement.dataset.reduceMotion === 'true') {
@@ -172,7 +125,6 @@ function feiereMeilenstein(anzahl = 28) {
 }
 
 window.dexToggle = dexToggle;
-window.dexAudio = dexAudio;
 window.feiereMeilenstein = feiereMeilenstein;
 window.dexSfx = sfx;
 

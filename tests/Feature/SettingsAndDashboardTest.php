@@ -77,7 +77,6 @@ it('speichert Spielebesitz, GO-Region und Zähl-Toggles', function () {
             'theme' => 'gameboy',
             'count_regional_in_total' => '1',
             'count_shiny_in_total' => '1',
-            'music_volume' => 60,
             'spiele' => [$spiel->id],
         ])
         ->assertRedirect()
@@ -89,7 +88,6 @@ it('speichert Spielebesitz, GO-Region und Zähl-Toggles', function () {
         ->and($settings->theme)->toBe('gameboy')
         ->and($settings->count_regional_in_total)->toBeTrue()
         ->and($settings->count_shiny_in_total)->toBeTrue()
-        ->and($settings->music_volume)->toBe(60)
         ->and($this->user->fresh()->games)->toHaveCount(1);
 });
 
@@ -99,7 +97,6 @@ it('nimmt Häkchen zurück, wenn die Checkbox nicht mitgeschickt wird', function
     $this->actingAs($this->user)->patch(route('settings.update'), [
         'go_region' => 'europa',
         'theme' => 'default',
-        'music_volume' => 35,
     ]);
 
     expect($this->user->fresh()->settingsOrDefault()->count_regional_in_total)->toBeFalse();
@@ -110,7 +107,6 @@ it('lehnt eine unbekannte GO-Region ab', function () {
         ->patch(route('settings.update'), [
             'go_region' => 'mond',
             'theme' => 'default',
-            'music_volume' => 35,
         ])
         ->assertSessionHasErrors('go_region');
 });
