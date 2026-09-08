@@ -90,6 +90,31 @@ class CuratedObtainabilitySeeder extends Seeder
         'zarude',
     ];
 
+    /**
+     * Geschenke außerhalb des Spielanfangs, die die PokeAPI nicht kennt.
+     *
+     * pokeapi-slug => [game-slugs => Beschreibung]
+     */
+    public const GIFTS = [
+        // Kronen-Schneelande (DLC): Cosmog steht im Haus in Freezington und
+        // wird uebergeben, nachdem der Angriff auf das Dorf beendet ist.
+        // Ohne diesen Eintrag haengt die ganze Linie -- Cosmovum, Solgaleo und
+        // Lunala erben ihren Weg von Cosmog -- allein an Sonne/Mond und
+        // Ultrasonne/Ultramond und damit an der Bank-Frist, obwohl sie in einem
+        // Switch-Titel direkt an HOME zu holen ist.
+        'cosmog' => ['sword', 'shield'],
+    ];
+
+    /**
+     * Spiele, in denen ein Starter tatsaechlich auch wild vorkommt.
+     *
+     * In Let's Go laufen Bisasam, Glumanda und Schiggy wirklich in der Welt
+     * herum (Vertania-Wald, Felstunnel, Zinnoberinseln). Dort darf der
+     * Wildfang-Eintrag also nicht wegfallen -- anders als bei der
+     * Starterwahl, die die PokeAPI faelschlich als Encounter fuehrt.
+     */
+    public const STARTER_ALSO_WILD = ['lets-go-pikachu', 'lets-go-eevee'];
+
     public function run(): void
     {
         $games = Game::query()->pluck('id', 'slug');
@@ -109,6 +134,13 @@ class CuratedObtainabilitySeeder extends Seeder
 
         $this->seedGroup(self::STARTERS, $games, $pokemon, ObtainMethod::Gift, Difficulty::Leicht, 'Starter-Pokémon zu Spielbeginn');
         $this->seedGroup(self::FOSSILS, $games, $pokemon, ObtainMethod::Fossil, Difficulty::Mittel, 'Fossil wiederbeleben');
+        $this->seedGroup(
+            self::GIFTS, $games, $pokemon, ObtainMethod::Gift, Difficulty::Leicht,
+            'Geschenk in Freezington (Kronen-Schneelande)',
+            'Setzt den Erweiterungspass voraus.',
+        );
+
+        $this->entferneStarterwahlAlsWildfang($games, $pokemon);
 
         foreach (self::EXPIRED_EVENT_MYTHICALS as $slug) {
             $pokemonId = $pokemon[$slug] ?? null;
@@ -147,6 +179,7 @@ class CuratedObtainabilitySeeder extends Seeder
         ObtainMethod $method,
         Difficulty $difficulty,
         string $detail,
+        ?string $note = null,
     ): void {
         foreach ($group as $slug => $gameSlugs) {
             $pokemonId = $pokemon[$slug] ?? null;
@@ -173,10 +206,64 @@ class CuratedObtainabilitySeeder extends Seeder
                         'location_detail' => $detail,
                         'difficulty' => $difficulty->value,
                         'event_expired' => false,
+                        'note' => $note,
                         'source' => 'curated',
                     ],
                 );
             }
+        }
+    }
+
+    /**
+     * Entfernt die Starterwahl, die als Wildfang in den Daten steht.
+     *
+     * Die PokeAPI fuehrt die Uebergabe des Starters als regulaeren Encounter im
+     * jeweiligen Startort -- Chelast steht dadurch mit "Wildfang, Lake Verity"
+     * in Diamant, obwohl es dort niemand fangen kann. Neben dem kuratierten
+     * Geschenk-Eintrag steht damit eine zweite Zeile, die dasselbe Ereignis
+     * falsch benennt.
+     *
+     * Erkennungsmerkmal ist der *eine* Fundort: Die Starterwahl passiert an
+     * genau einem Ort. Wo ein Starter wirklich wild vorkommt, nennt die
+     * PokeAPI mehrere Gebiete (Let's Go) -- solche Zeilen bleiben, ebenso
+     * jedes Spiel aus STARTER_ALSO_WILD.
+     *
+     * Der naechste `pokedex:import-encounters` legt die Zeilen wieder an; der
+     * Seeder laeuft laut README danach und raeumt sie erneut weg.
+     */
+    private function entferneStarterwahlAlsWildfang($games, $pokemon): void
+    {
+        $entfernt = 0;
+
+        foreach (self::STARTERS as $slug => $gameSlugs) {
+            $pokemonId = $pokemon[$slug] ?? null;
+
+            if ($pokemonId === null) {
+                continue;
+            }
+
+            foreach ($gameSlugs as $gameSlug) {
+                $gameId = $games[$gameSlug] ?? null;
+
+                if ($gameId === null || in_array($gameSlug, self::STARTER_ALSO_WILD, true)) {
+                    continue;
+                }
+
+                $entfernt += Obtainability::query()
+                    ->where('pokemon_id', $pokemonId)
+                    ->where('game_id', $gameId)
+                    ->where('method', ObtainMethod::Wild->value)
+                    ->whereNull('pokemon_form_id')
+                    ->where('location_detail', 'not like', '%,%')
+                    ->delete();
+            }
+        }
+
+        if ($entfernt > 0 && $this->command !== null) {
+            $this->command->info(
+                "CuratedObtainabilitySeeder: {$entfernt} als Wildfang gefuehrte Starterwahlen entfernt "
+                .'-- sie stehen als Geschenk in der Liste.'
+            );
         }
     }
 }
