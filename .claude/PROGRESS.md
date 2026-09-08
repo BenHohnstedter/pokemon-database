@@ -2,6 +2,36 @@
 
 Kurzer Stand je Session/Phase. Neuester Eintrag oben. Am Ende jeder Session aktualisieren.
 
+## 2026-09-08 — ORAS-Starter, und warum Dusk lokal grün und in CI rot war
+
+### Umgesetzt
+
+- **ORAS verschenkt Johto-, Einall- und Sinnoh-Starter** (FEATURE-UPDATES.md
+  14). 18 weitere Wildfang-Zeilen auf „Hoenn Route 101" sind damit als
+  Geschenk ausgewiesen, jede mit ihrer eigenen Bedingung als Notiz.
+
+### Dusk: zwei verschiedene Datenbanken im selben Lauf
+
+Der lokale Lauf scheiterte zuerst mit acht Fehlschlägen — und der
+Fehlschlag-Screenshot zeigte den Grund: Der Browser sah die
+**Entwicklungsdatenbank** (echter Nutzer, 283 Pokémon in HeartGold), während
+die Tests ihre Fixtures in `pokemon_database_dusk` anlegten.
+
+Ursache ist `php artisan serve --no-reload`: Der Serverprozess liest die `.env`
+genau einmal beim Start. `php artisan dusk` tauscht sie danach gegen
+`.env.dusk.local` — davon bekommt der laufende Server nichts mehr mit. Weichen
+die beiden Dateien in der Datenbank ab, laufen Testprozess und Server
+auseinander, und jedes `waitForText` läuft in seinen Timeout.
+
+Mit gleicher Datenbank für beide: **13 von 13 Dusk-Tests grün**, lokal
+verifiziert. Die Oberflächenänderungen dieser Session sind also unschuldig.
+
+Im Workflow bekommt die `.env` deshalb dieselben Werte wie `.env.dusk.local`
+(Datenbank, Session- und Cache-Treiber), sodass der Tausch nichts mehr ändert.
+Dazu schreibt der Job bei Fehlschlag `laravel.log`, das Server-Log und die
+Browser-Konsole ins Log und hängt sie ans Artefakt — die GitHub-Logs sind ohne
+Token nicht abrufbar (403), und ohne diese Ausgabe bleibt nur Raten.
+
 ## 2026-09-07 (später) — Starterwahl, Cosmog und ein CI-Job, der nie lief
 
 ### Vom Nutzer gemeldet, umgesetzt

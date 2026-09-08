@@ -261,3 +261,27 @@ diesem einen Eintrag, samt Notiz „Setzt den Erweiterungspass voraus."
 Ein Eintrag genügt für die ganze Linie: Cosmovum, Solgaleo und Lunala erben
 ihren Weg über `source_pokemon_id` von Cosmog. Für ein Konto mit Schwert steht
 Cosmovum damit auf 🟢 statt an der Frist.
+
+### 14. Omega Rubin und Alpha Saphir verschenken drei weitere Startergruppen
+
+Nachtrag zu 12: Chelast stand dort weiter als „Wildfang, Hoenn Route 101" —
+auf Route 101 laufen aber nur Zigzachs, Waumpel und Fiffyen herum.
+
+Der Nutzer erinnerte sich an nachträgliche Starter-Geschenke, war bei den
+Generationen unsicher. Die Daten und Bulbapedia sagen übereinstimmend
+dasselbe: Prof. Birk verschenkt in drei Schüben, jeweils an einen Fortschritt
+gebunden —
+
+| Schub | Starter | Auslöser |
+|---|---|---|
+| Johto | Endivie, Feurigel, Karnimani | nach dem Ligasieg und dem Treffen mit Amara |
+| Einall | Serpifeu, Floink, Ottaro | nach Abschluss der Delta-Episode |
+| Sinnoh | Chelast, Panflam, Plinfa | nach dem zweiten Einzug in die Ruhmeshalle |
+
+Genau diese neun Arten — und keine anderen — tragen in den ORAS-Daten der
+PokéAPI einen Encounter auf Route 101. Kanto- und Kalos-Starter fehlen dort,
+was zur Quelle passt: Sie werden in ORAS nicht verschenkt.
+
+Die drei Gruppen stehen als eigene Konstanten im Seeder, damit jede ihre
+eigene Bedingung als Notiz tragen kann. Die falschen Wildfang-Zeilen räumt
+derselbe Mechanismus wie in 12 weg.
