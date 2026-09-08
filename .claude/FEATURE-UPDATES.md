@@ -367,3 +367,55 @@ jederzeit über die Liste in `config/pokedex.php`, und der Test merkt es, wenn
 Datei und Nachweis auseinanderlaufen.
 
 Weiterhin keine Originalmusik aus den Spielen — die Begründung steht in 15.
+
+---
+
+## 2026-09-08 (Abend) — Musik raus, Datenlücken zu
+
+### 19. Die Musik ist wieder raus
+
+Vom Nutzer entschieden: „alles was Musik ist kann raus". Entfernt sind die
+dreizehn Dateien (rund 33 MB), die Liste in `config/pokedex.php`, der Player,
+die Schalter in der Kopfzeile und die beiden Einstellungen — samt Migration, die
+`music_enabled` und `music_volume` aus `user_settings` nimmt.
+
+Die 8-Bit-Effekte beim Fangen bleiben. Sie hängen an `sound_effects_enabled`
+und sind davon nicht betroffen.
+
+### 20. Legenden: Z-A, Hisui-Arten und die Dyna-Raids
+
+Drei Meldungen aus der Praxis, alle bestätigt:
+
+**Legenden: Z-A fehlte ganz.** Erschienen am 16.10.2025, die HOME-Anbindung kam
+am 02.04.2026 mit HOME 4.0.0 nach. Steht jetzt als Gen-9-Titel in der
+Spieleliste. Eine Einschränkung passt nicht ins Modell und ist deshalb nur
+kommentiert: In das Spiel *hinein* lassen sich nur Arten aus dem Illumina- und
+dem Hyperraum-Dex übertragen. Für diese App zählt die Gegenrichtung, und die ist
+offen. Fundorte liefert die PokéAPI für den Titel noch nicht — die Seite sagt
+das ehrlich, statt Vollzug zu melden.
+
+**Salmagnis und Cupidos standen unter Schwert.** Beide gibt es nur in Hisui.
+Ursache war `pokedex:fill-gaps`: Der Befehl hängt Arten ohne jeden Fundweg ans
+Hauptspiel ihrer Generation, und das ist für Generation 8 Schwert/Schild. Alle
+sieben Hisui-Exklusiven haben jetzt einen echten Eintrag in Legenden: Arceus,
+sind damit keine Lücke mehr, und die falschen Fallback-Zeilen sind weg.
+
+**Die Kronen-Schneelande verschenken Legendäre.** 47 Arten aus den Dyna-Raids
+im Max-Lager sind nachgetragen, an *beiden* Editionen. Das ist Absicht: Die
+Versionsbindung gilt nur beim eigenen Hosten — wer bei jemand anderem mitgeht,
+trifft auch die Arten der anderen Edition. Für die Frage „komme ich da noch
+dran?" sind sie in beiden erreichbar; die Notiz an jedem Eintrag sagt es dazu.
+
+### 21. Die Spielansicht zeigt die ganze Entwicklungslinie
+
+Vom Nutzer gemeldet: Legenden: Arceus listete Feurigel, nicht aber Igelavar und
+Tornupto — dabei ist die Linie mit dem Starter in der Hand komplett abarbeitbar.
+
+Die Seite zeigt jetzt zusätzlich, was sich hier aus einer Vorstufe entwickeln
+lässt, mit „Entwicklung aus Feurigel" in der Fundort-Spalte. Grundlage ist
+`source_pokemon_id`, das bis zur Basis der Linie durchgezogen ist — für Tornupto
+steht dort Feurigel, nicht Igelavar.
+
+Die Zeilen sind bewusst **nicht** in der Datenbank: Sie beschreiben keinen
+Fundort, sondern eine Folgerung aus der Linie. Gespeichert wären sie Redundanz,
+die beim nächsten Import auseinanderläuft.

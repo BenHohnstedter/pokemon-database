@@ -2,6 +2,41 @@
 
 Kurzer Stand je Session/Phase. Neuester Eintrag oben. Am Ende jeder Session aktualisieren.
 
+## 2026-09-08 (Abend) — Musik raus, Legenden: Z-A rein, Datenlücken geschlossen
+
+### Umgesetzt
+
+1. **Musik komplett entfernt** (FEATURE-UPDATES.md 19). Dateien, Player,
+   Schalter, Einstellungen und die beiden Spalten in `user_settings`. Die
+   8-Bit-Effekte bleiben.
+2. **Legenden: Z-A** in der Spieleliste (FEATURE-UPDATES.md 20). Gen 9,
+   erschienen 16.10.2025, HOME-Anbindung seit HOME 4.0.0 (02.04.2026).
+   Fundorte hat die PokéAPI dafür noch nicht.
+3. **Hisui-Arten aus Schwert/Schild geräumt.** `pokedex:fill-gaps` hatte
+   Salmagnis und Cupidos ans Gen-8-Hauptspiel gehängt. Alle sieben
+   Hisui-Exklusiven haben jetzt einen echten Eintrag in Legenden: Arceus.
+4. **47 Legendäre aus den Dyna-Raids** der Kronen-Schneelande, an beiden
+   Editionen — die Versionsbindung gilt nur beim eigenen Hosten.
+5. **Spielansicht zeigt die Entwicklungslinie** (FEATURE-UPDATES.md 21).
+
+### Offen und bewusst nicht geraten
+
+- **Legenden: Z-A hat keine Fundorte.** Die PokéAPI liefert für den Titel
+  nichts. Wer den Bestand will, trägt ihn per `pokedex:import-sources` aus einer
+  CSV nach.
+- **Die Versionsverteilung der Dyna-Raid-Legendären** (welche Art in welcher
+  Edition beim eigenen Hosten erscheint) ist nicht hinterlegt. Für die Frage
+  „komme ich dran?" ändert sie nichts, weil das Mitgehen bei anderen den
+  Unterschied aufhebt.
+- **Ob die Hisui-Arten inzwischen auch in Karmesin/Purpur vorkommen**, ist
+  ungeprüft. Der Eintrag in Legenden: Arceus stimmt in jedem Fall.
+
+### Tests: 307 grün
+
+Zwei neue in `GameViewTest` für die Entwicklungszeilen (auch der Fall, dass eine
+Art hier ohnehin vorkommt und nicht doppelt auftauchen darf). Der `MusikTest`
+ist mit der Musik verschwunden.
+
 ## 2026-09-08 (Nachmittag) — Deutsch auf den Konto-Seiten, dreizehn Stücke
 
 ### Umgesetzt
