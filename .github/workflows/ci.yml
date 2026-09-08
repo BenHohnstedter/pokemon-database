@@ -150,25 +150,55 @@ jobs:
       - name: ChromeDriver aktualisieren
         run: php artisan dusk:chrome-driver --detect
 
-      - name: Server starten
-        # nohup und Umleitung sind beide nötig: Ohne Umleitung wartet der
-        # Runner am Schrittende auf die offene Ausgabe, ohne nohup räumt er
-        # den Prozess weg, bevor der nächste Schritt ihn erreicht.
-        run: nohup php artisan serve --no-reload > storage/logs/serve.log 2>&1 &
-
-      - name: Warten, bis der Server antwortet
+      - name: Dusk
+        # Server und Tests laufen bewusst im SELBEN Schritt.
+        #
+        # Vorher startete der Server in einem eigenen Schritt: Der Healthcheck
+        # war grün, mitten im Testlauf brach der Browser dann aber mit
+        # net::ERR_CONNECTION_REFUSED ab -- der Prozess überlebte die
+        # Schrittgrenze nicht zuverlässig. In einem Schritt gestartet, hängt er
+        # an derselben Shell wie `artisan dusk` und lebt genauso lange.
+        #
+        # PHP_CLI_SERVER_WORKERS: Der eingebaute Server bearbeitet sonst genau
+        # eine Anfrage zur Zeit. Eine Dusk-Seite lädt aber gleichzeitig CSS und
+        # JS vom selben Server -- das reiht sich hinter der Seite ein und macht
+        # jeden Aufruf unnötig langsam.
+        env:
+          PHP_CLI_SERVER_WORKERS: 4
         run: |
+          php artisan serve --no-reload > storage/logs/serve.log 2>&1 &
+          SERVER_PID=$!
+
+          bereit=0
           for i in $(seq 1 30); do
-            curl -sf http://127.0.0.1:8000 > /dev/null && exit 0
+            if curl -sf http://127.0.0.1:8000 > /dev/null; then bereit=1; break; fi
             sleep 1
           done
-          echo "Server ist nicht hochgekommen. Antwort und Server-Log:"
-          curl -sS -i http://127.0.0.1:8000 | head -n 40 || true
-          cat storage/logs/serve.log || true
-          exit 1
 
-      - name: Dusk
-        run: php artisan dusk
+          if [ "$bereit" -ne 1 ]; then
+            echo "Server ist nicht hochgekommen. Antwort und Server-Log:"
+            curl -sS -i http://127.0.0.1:8000 | head -n 40 || true
+            cat storage/logs/serve.log || true
+            exit 1
+          fi
+
+          # Schritte laufen mit `bash -e`: Ohne das `||` bräche das Skript beim
+          # ersten Testfehler ab, und die Diagnose darunter liefe nie.
+          ergebnis=0
+          php artisan dusk || ergebnis=$?
+
+          # Lebt der Server danach noch? Wenn nicht, ist das die eigentliche
+          # Meldung -- die Testfehler sind dann nur die Folge davon.
+          if kill -0 "$SERVER_PID" 2>/dev/null; then
+            echo "Der Testserver lief bis zum Schluss."
+          else
+            echo "ACHTUNG: Der Testserver war am Ende nicht mehr am Leben."
+          fi
+
+          echo "===== storage/logs/serve.log ====="
+          cat storage/logs/serve.log || true
+
+          exit $ergebnis
 
       - name: Logs bei Fehlschlag ausgeben
         if: failure()
