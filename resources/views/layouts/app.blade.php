@@ -26,7 +26,12 @@
 <body class="min-h-screen antialiased"
       x-data="dexAudio({
           music: {{ $dexSettings?->music_enabled ? 'true' : 'false' }},
-          volume: {{ $dexSettings?->music_volume ?? 35 }}
+          volume: {{ $dexSettings?->music_volume ?? 35 }},
+          tracks: {{ Js::from(collect(config('pokedex.music', []))->map(fn (array $s) => [
+              'datei' => asset($s['datei']),
+              'titel' => $s['titel'],
+              'urheber' => $s['urheber'],
+          ])) }}
       })">
 
     <a href="#inhalt"

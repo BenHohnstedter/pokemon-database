@@ -16,6 +16,40 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Hintergrundmusik
+    |--------------------------------------------------------------------------
+    |
+    | Ruhige Stücke zum Durchschalten, standardmäßig aus (spec.md 2.9).
+    |
+    | Ausschließlich frei lizenziertes Material: Die Original-Soundtracks der
+    | Spiele gehören Nintendo/Game Freak/The Pokémon Company und dürfen hier
+    | nicht liegen. Alle Stücke unten stehen unter CC0 und stammen von
+    | OpenGameArt; Herkunft und Urheber siehe public/audio/HERKUNFT.md.
+    |
+    | Weitere Stücke: Datei nach public/audio legen, hier eintragen, in
+    | HERKUNFT.md dokumentieren. Mehr ist nicht nötig.
+    |
+    */
+    'music' => [
+        [
+            'datei' => 'audio/town-theme.mp3',
+            'titel' => 'Town Theme',
+            'urheber' => 'cynicmusic',
+        ],
+        [
+            'datei' => 'audio/neue-stadt.mp3',
+            'titel' => 'A New Town',
+            'urheber' => 'cynicmusic',
+        ],
+        [
+            'datei' => 'audio/stadtbummel.ogg',
+            'titel' => 'Exploring Town',
+            'urheber' => 'Julie Damsgaard',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | PokéAPI
     |--------------------------------------------------------------------------
     */

@@ -106,8 +106,13 @@ function dexAudio(config) {
     return {
         musicOn: config.music,
         volume: config.volume,
+        titel: '',
 
         init() {
+            music.setTracks(config.tracks ?? []);
+            music.setVolume(this.volume);
+            this.titel = music.titel();
+
             // Autoplay ist gesperrt, bis der Nutzer irgendwo geklickt hat.
             if (this.musicOn) {
                 document.addEventListener('click', () => this.starteMusik(), { once: true });
@@ -124,6 +129,21 @@ function dexAudio(config) {
         umschalten() {
             this.musicOn = !this.musicOn;
             this.musicOn ? this.starteMusik() : music.stop();
+        },
+
+        /**
+         * Nächstes Stück. Schaltet die Musik gleich mit ein, wenn sie aus war —
+         * wer weiterklickt, will hören und nicht erst zwei Schalter finden.
+         */
+        weiter() {
+            music.next();
+            this.titel = music.titel();
+
+            if (! this.musicOn) {
+                this.musicOn = true;
+            }
+
+            this.starteMusik();
         },
     };
 }

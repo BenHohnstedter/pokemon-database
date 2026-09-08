@@ -39,16 +39,29 @@
 
             <div class="flex min-w-0 shrink-0 items-center gap-3">
                 @auth
-                    {{-- Chiptune-Schalter, standardmäßig aus (spec.md 2.9).
+                    {{-- Musikschalter, standardmäßig aus (spec.md 2.9).
                          Auf sehr schmalen Displays weggelassen, sonst schiebt die
                          Kopfzeile die ganze Seite in den Querlauf. --}}
-                    <button type="button"
-                            x-on:click="umschalten()"
-                            class="pixel-button-ghost hidden sm:inline-flex"
-                            :aria-pressed="musicOn ? 'true' : 'false'"
-                            :title="musicOn ? 'Musik ausschalten' : 'Musik einschalten'">
-                        <span x-text="musicOn ? '♪ an' : '♪ aus'"></span>
-                    </button>
+                    <div class="hidden items-center gap-1 sm:flex">
+                        <button type="button"
+                                x-on:click="umschalten()"
+                                class="pixel-button-ghost"
+                                :aria-pressed="musicOn ? 'true' : 'false'"
+                                :title="musicOn ? 'Musik ausschalten' : 'Musik einschalten'">
+                            <span x-text="musicOn ? '♪ an' : '♪ aus'"></span>
+                        </button>
+
+                        {{-- Weiterschalten nennt das laufende Stück im Titel:
+                             CC0 verlangt keine Nennung, die Urheber bitten aber
+                             darum, und im Tooltip stört sie niemanden. --}}
+                        <button type="button"
+                                x-on:click="weiter()"
+                                class="pixel-button-ghost px-2"
+                                aria-label="Nächstes Stück"
+                                :title="'Nächstes Stück – gerade: ' + titel">
+                            ⏭
+                        </button>
+                    </div>
 
                     <div class="hidden text-right text-xs lg:block">
                         <div class="font-pixel text-[10px] text-dex-accent">

@@ -82,50 +82,103 @@ export const sfx = {
 };
 
 /**
- * Dezenter Hintergrund-Loop. Standardmäßig aus (spec.md 2.9) und über die
- * Nutzereinstellungen schaltbar.
+ * Hintergrundmusik: ruhige, frei lizenzierte Stücke zum Durchschalten.
+ *
+ * Früher stand hier ein aus Oszillatoren zusammengesetzter Chiptune-Loop. Der
+ * klang nach vier Takten wie vier Takte -- zum Danebenlaufen taugt er nicht.
+ * Jetzt spielt ein ganz gewöhnliches <audio>-Element die Stücke aus
+ * config/pokedex.php (`music`), Herkunft und Lizenz stehen in
+ * public/audio/HERKUNFT.md.
+ *
+ * Standardmäßig aus (spec.md 2.9) und über die Nutzereinstellungen schaltbar.
+ * Autoplay ist bis zum ersten Klick gesperrt -- darum kümmert sich dexAudio.
  */
 export const music = {
-    timer: null,
-    gain: null,
+    /** @type {{datei: string, titel: string, urheber: string}[]} */
+    tracks: [],
+    index: 0,
+    element: null,
     volume: 0.35,
 
-    // Eine schlichte Vier-Takt-Basslinie plus Melodie – bewusst unaufdringlich.
-    bass: [130.81, 130.81, 174.61, 196.0],
-    lead: [523.25, 659.25, 587.33, 493.88, 523.25, 783.99, 659.25, 587.33],
+    setTracks(tracks) {
+        this.tracks = Array.isArray(tracks) ? tracks : [];
+    },
+
+    aktuell() {
+        return this.tracks[this.index] ?? null;
+    },
+
+    titel() {
+        const stueck = this.aktuell();
+
+        return stueck ? `${stueck.titel} — ${stueck.urheber}` : 'Keine Musik hinterlegt';
+    },
 
     start(volume = 0.35) {
-        const ctx = ensureContext();
+        this.volume = volume;
 
-        if (!ctx || this.timer !== null) {
+        const stueck = this.aktuell();
+
+        if (! stueck) {
             return;
         }
 
-        this.volume = volume;
-        let step = 0;
+        if (this.element === null) {
+            this.element = new Audio();
+            // Ein Stück läuft in Schleife, bis jemand weiterschaltet.
+            this.element.loop = true;
+            this.element.preload = 'none';
+        }
 
-        const tick = () => {
-            const bassNote = this.bass[step % this.bass.length];
-            const leadNote = this.lead[step % this.lead.length];
+        const quelle = stueck.datei;
 
-            blip(bassNote, 0, 0.38, 0.05 * this.volume, 'triangle');
-            blip(leadNote, 0.02, 0.22, 0.035 * this.volume);
+        // Nur neu laden, wenn wirklich ein anderes Stück dran ist -- sonst
+        // springt das laufende beim Lautstärkeregeln an den Anfang zurück.
+        if (! this.element.src.endsWith(quelle)) {
+            this.element.src = quelle;
+        }
 
-            step += 1;
-        };
+        this.element.volume = this.volume;
 
-        tick();
-        this.timer = window.setInterval(tick, 420);
+        // play() liefert ein Promise, das der Browser ablehnt, solange keine
+        // Nutzergeste vorliegt. Das ist kein Fehler, den jemand sehen müsste.
+        const versuch = this.element.play();
+
+        if (versuch && typeof versuch.catch === 'function') {
+            versuch.catch(() => {});
+        }
+    },
+
+    /** Nächstes Stück; springt am Ende der Liste wieder auf das erste. */
+    next() {
+        if (this.tracks.length === 0) {
+            return null;
+        }
+
+        this.index = (this.index + 1) % this.tracks.length;
+
+        if (this.element !== null && ! this.element.paused) {
+            this.start(this.volume);
+        }
+
+        return this.aktuell();
     },
 
     stop() {
-        if (this.timer !== null) {
-            window.clearInterval(this.timer);
-            this.timer = null;
+        if (this.element !== null) {
+            this.element.pause();
         }
+    },
+
+    laeuft() {
+        return this.element !== null && ! this.element.paused;
     },
 
     setVolume(value) {
         this.volume = Math.min(1, Math.max(0, value / 100));
+
+        if (this.element !== null) {
+            this.element.volume = this.volume;
+        }
     },
 };
