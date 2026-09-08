@@ -41,7 +41,9 @@ it('führt den kompletten Kernflow von der Registrierung bis zum Logout durch', 
             ->type('email', 'dusk-trainer@localhost')
             ->type('password', 'geheim-genug-123')
             ->type('password_confirmation', 'geheim-genug-123')
-            ->press('REGISTER')
+            // Die Schaltfläche heißt "Registrieren"; Dusk vergleicht den
+            // gerenderten Text, und das Retro-CSS schreibt ihn groß.
+            ->press('REGISTRIEREN')
             ->waitForLocation('/dashboard')
 
             // ── Ausgangsstand: nichts gesammelt ───────────────────────────

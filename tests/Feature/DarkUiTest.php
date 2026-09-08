@@ -70,3 +70,35 @@ it('verlinkt ein Favicon – angemeldet wie abgemeldet', function () {
             ->and($html)->toContain('icons/favicon-32.png');
     }
 });
+
+it('spricht auf den Konto-Seiten Deutsch', function () {
+    // Breeze liefert die Texte über __(); ohne lang/de.json standen dort
+    // "Email", "Log in" und "Remember me" (FEATURE-UPDATES.md 17).
+    $login = $this->get(route('login'))->assertOk();
+
+    $login->assertSee('Anmelden')
+        ->assertSee('Passwort')
+        ->assertSee('Angemeldet bleiben')
+        ->assertDontSee('Remember me')
+        ->assertDontSee('Log in');
+
+    $this->get(route('register'))->assertOk()
+        ->assertSee('Registrieren')
+        ->assertSee('Passwort wiederholen')
+        ->assertDontSee('Confirm Password');
+});
+
+it('meldet Eingabefehler auf Deutsch', function () {
+    $antwort = $this->from(route('register'))->post(route('register'), [
+        'name' => '',
+        'email' => 'keine-adresse',
+        'password' => 'kurz',
+        'password_confirmation' => 'anders',
+    ]);
+
+    $fehler = session('errors')->all();
+
+    expect(implode(' ', $fehler))
+        ->toContain('fehlt noch')
+        ->and(implode(' ', $fehler))->toContain('gültige E-Mail-Adresse');
+});
