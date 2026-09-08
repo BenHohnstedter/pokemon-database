@@ -32,9 +32,34 @@ return [
     */
     'music' => [
         [
+            'datei' => 'audio/ruhig-zuhause.ogg',
+            'titel' => 'A Place I Call Home',
+            'urheber' => 'Juhani Junkala',
+        ],
+        [
+            'datei' => 'audio/ruhig-friedliche-tage.ogg',
+            'titel' => 'Peaceful Days',
+            'urheber' => 'Juhani Junkala',
+        ],
+        [
+            'datei' => 'audio/stadt-heimatstadt.ogg',
+            'titel' => 'Home Town',
+            'urheber' => 'Juhani Junkala',
+        ],
+        [
             'datei' => 'audio/town-theme.mp3',
             'titel' => 'Town Theme',
             'urheber' => 'cynicmusic',
+        ],
+        [
+            'datei' => 'audio/ruhig-sommererinnerungen.ogg',
+            'titel' => 'Summer Memories',
+            'urheber' => 'Juhani Junkala',
+        ],
+        [
+            'datei' => 'audio/stadt-stillstand.ogg',
+            'titel' => 'Where Time Stands Still',
+            'urheber' => 'Juhani Junkala',
         ],
         [
             'datei' => 'audio/neue-stadt.mp3',
@@ -42,9 +67,34 @@ return [
             'urheber' => 'cynicmusic',
         ],
         [
+            'datei' => 'audio/ruhig-kindheitsfreunde.ogg',
+            'titel' => 'Childhood Friends',
+            'urheber' => 'Juhani Junkala',
+        ],
+        [
+            'datei' => 'audio/stadt-sonnenkueste.ogg',
+            'titel' => 'Sunshine Coast',
+            'urheber' => 'Juhani Junkala',
+        ],
+        [
+            'datei' => 'audio/ruhig-sandburgen.ogg',
+            'titel' => 'Sand Castles',
+            'urheber' => 'Juhani Junkala',
+        ],
+        [
             'datei' => 'audio/stadtbummel.ogg',
             'titel' => 'Exploring Town',
             'urheber' => 'Julie Damsgaard',
+        ],
+        [
+            'datei' => 'audio/ruhig-unschuld.ogg',
+            'titel' => 'Innocence',
+            'urheber' => 'Juhani Junkala',
+        ],
+        [
+            'datei' => 'audio/stadt-basar.ogg',
+            'titel' => 'Bazaar',
+            'urheber' => 'Juhani Junkala',
         ],
     ],
 
