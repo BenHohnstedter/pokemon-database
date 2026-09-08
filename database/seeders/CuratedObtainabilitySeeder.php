@@ -134,6 +134,51 @@ class CuratedObtainabilitySeeder extends Seeder
     ];
 
     /**
+     * Arten, die es nur in Hisui gibt (Legenden: Arceus).
+     *
+     * Sie tragen Gen-8-Dexnummern, kommen in Schwert/Schild aber nicht vor.
+     * `pokedex:fill-gaps` haengt Arten ohne jeden Fundweg ans Hauptspiel ihrer
+     * Generation -- und das ist fuer Generation 8 Schwert/Schild. Salmagnis und
+     * Cupidos standen dadurch als Wildfang in Schwert, wo sie niemand findet.
+     *
+     * Mit einem echten Eintrag hier sind sie keine Luecke mehr, und der
+     * Fallback fasst sie gar nicht erst an.
+     */
+    public const HISUI_EXCLUSIVE = [
+        'wyrdeer' => ['legends-arceus'],
+        'kleavor' => ['legends-arceus'],
+        'ursaluna' => ['legends-arceus'],
+        'basculegion' => ['legends-arceus'],
+        'sneasler' => ['legends-arceus'],
+        'overqwil' => ['legends-arceus'],
+        'enamorus' => ['legends-arceus'],
+    ];
+
+    /**
+     * Legendaere aus den Dyna-Raids im Max-Lager (Kronen-Schneelande, DLC).
+     *
+     * Der Eintrag haengt bewusst an BEIDEN Editionen, obwohl ein Teil je nach
+     * Version nur bei der einen erscheint: Die Versionsbindung gilt nur, wenn
+     * man selbst hostet. Wer bei jemand anderem mitgeht, trifft auch die Arten
+     * der anderen Edition -- fuer die Frage "komme ich da noch dran?" sind sie
+     * also in beiden erreichbar.
+     *
+     * Quelle der Artenliste: Uebersicht der Dyna-Raid-Legendaeren (Game8),
+     * abgeglichen mit Bulbapedia zum Ablauf.
+     */
+    public const DYNAMAX_ADVENTURES = [
+        'articuno', 'zapdos', 'moltres', 'mewtwo',
+        'raikou', 'entei', 'suicune', 'lugia', 'ho-oh',
+        'latias', 'latios', 'kyogre', 'groudon', 'rayquaza',
+        'uxie', 'mesprit', 'azelf', 'dialga', 'palkia', 'heatran', 'giratina', 'cresselia',
+        'tornadus', 'thundurus', 'landorus', 'reshiram', 'zekrom', 'kyurem',
+        'xerneas', 'yveltal', 'zygarde',
+        'tapu-koko', 'tapu-lele', 'tapu-bulu', 'tapu-fini', 'solgaleo', 'lunala', 'necrozma',
+        'nihilego', 'buzzwole', 'pheromosa', 'xurkitree', 'celesteela', 'kartana',
+        'guzzlord', 'stakataka', 'blacephalon',
+    ];
+
+    /**
      * Spiele, in denen ein Starter tatsaechlich auch wild vorkommt.
      *
      * In Let's Go laufen Bisasam, Glumanda und Schiggy wirklich in der Welt
@@ -184,7 +229,15 @@ class CuratedObtainabilitySeeder extends Seeder
             'Eines der drei Sinnoh-Starter, nach dem zweiten Einzug in die Ruhmeshalle.',
         );
 
+        $this->seedGroup(
+            self::HISUI_EXCLUSIVE, $games, $pokemon, ObtainMethod::Wild, Difficulty::Mittel,
+            'In Hisui zu fangen',
+        );
+
+        $this->seedDynamaxAbenteuer($games, $pokemon);
+
         $this->entferneStarterwahlAlsWildfang($games, $pokemon);
+        $this->entferneFalscheHisuiFallbacks($games, $pokemon);
 
         foreach (self::EXPIRED_EVENT_MYTHICALS as $slug) {
             $pokemonId = $pokemon[$slug] ?? null;
@@ -314,6 +367,89 @@ class CuratedObtainabilitySeeder extends Seeder
             $this->command->info(
                 "CuratedObtainabilitySeeder: {$entfernt} als Wildfang gefuehrte Starterwahlen entfernt "
                 .'-- sie stehen als Geschenk in der Liste.'
+            );
+        }
+    }
+
+    /**
+     * Legendaere aus den Dyna-Raids, an beiden Editionen.
+     *
+     * Eigene Methode statt seedGroup, weil die Liste flach ist: dieselben Arten,
+     * dieselben zwei Spiele.
+     */
+    private function seedDynamaxAbenteuer($games, $pokemon): void
+    {
+        $notiz = 'Erweiterungspass noetig. Die Versionsbindung gilt nur beim eigenen Hosten '
+            .'-- wer bei anderen mitgeht, trifft auch die Legendaeren der anderen Edition.';
+
+        foreach (self::DYNAMAX_ADVENTURES as $slug) {
+            $pokemonId = $pokemon[$slug] ?? null;
+
+            if ($pokemonId === null) {
+                continue;
+            }
+
+            foreach (['sword', 'shield'] as $gameSlug) {
+                $gameId = $games[$gameSlug] ?? null;
+
+                if ($gameId === null) {
+                    continue;
+                }
+
+                Obtainability::updateOrCreate(
+                    [
+                        'pokemon_id' => $pokemonId,
+                        'game_id' => $gameId,
+                        'method' => ObtainMethod::Raid->value,
+                    ],
+                    [
+                        'pokemon_form_id' => null,
+                        'location_detail' => 'Dyna-Raid im Max-Lager (Kronen-Schneelande)',
+                        'difficulty' => Difficulty::Mittel->value,
+                        'event_expired' => false,
+                        'note' => $notiz,
+                        'source' => 'curated',
+                    ],
+                );
+            }
+        }
+    }
+
+    /**
+     * Raeumt die Hisui-Arten aus Schwert/Schild, wo `pokedex:fill-gaps` sie
+     * mangels Alternative hingehaengt hatte.
+     *
+     * Nur die eigenen Fallback-Zeilen werden angefasst; echte Fundorte aus der
+     * PokeAPI bleiben unberuehrt -- falls eine dieser Arten spaeter doch in
+     * einem Galar-Titel auftaucht, steht sie weiter da.
+     */
+    private function entferneFalscheHisuiFallbacks($games, $pokemon): void
+    {
+        $galar = array_filter([$games['sword'] ?? null, $games['shield'] ?? null]);
+
+        if ($galar === []) {
+            return;
+        }
+
+        $ids = array_filter(array_map(
+            fn (string $slug) => $pokemon[$slug] ?? null,
+            array_keys(self::HISUI_EXCLUSIVE),
+        ));
+
+        if ($ids === []) {
+            return;
+        }
+
+        $entfernt = Obtainability::query()
+            ->whereIn('pokemon_id', $ids)
+            ->whereIn('game_id', $galar)
+            ->where('source', 'generation-fallback')
+            ->delete();
+
+        if ($entfernt > 0 && $this->command !== null) {
+            $this->command->info(
+                "CuratedObtainabilitySeeder: {$entfernt} Hisui-Arten aus Schwert/Schild entfernt "
+                .'-- dort kommen sie nicht vor.'
             );
         }
     }

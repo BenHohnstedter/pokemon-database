@@ -99,6 +99,17 @@ class GameSeeder extends Seeder
         ['scarlet', 'Karmesin', 'Scarlet', 9, Platform::Switch, 2022, true, false, true, 'Direkt an HOME, inkl. DLC Die Schatzkammer von Zone Null'],
         ['violet', 'Purpur', 'Violet', 9, Platform::Switch, 2022, true, false, true, 'Direkt an HOME, inkl. DLC Die Schatzkammer von Zone Null'],
 
+        /*
+         * Legenden: Z-A, erschienen am 16.10.2025 (Switch und Switch-2-Edition).
+         * Die HOME-Anbindung kam am 02.04.2026 mit HOME 4.0.0 nach.
+         *
+         * Einschränkung, die hier nicht ins Modell passt: In das Spiel HINEIN
+         * lassen sich nur Arten aus dem Illumina- und dem Hyperraum-Dex
+         * übertragen. Für diese App zählt aber die Gegenrichtung -- was im Spiel
+         * gefangen wurde, kommt nach HOME -- und die ist offen.
+         */
+        ['legends-z-a', 'Legenden: Z-A', 'Legends: Z-A', 9, Platform::Switch, 2025, true, false, true, 'Direkt an HOME (seit HOME 4.0.0, April 2026)'],
+
         // ── Nebenreihe mit HOME-Anbindung ────────────────────────────────────
         ['go', 'Pokémon GO', 'Pokémon GO', 0, Platform::Mobile, 2016, true, false, true, 'Per GO-Transporter an HOME – hebt die Bank-Deadline auf'],
     ];
