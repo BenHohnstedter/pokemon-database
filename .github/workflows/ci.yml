@@ -122,19 +122,26 @@ jobs:
         run: |
           cp .env.dusk.local.example .env.dusk.local
           cp .env.example .env
+          # Der MySQL-Dienst legt nur `pokemon_database_dusk` an. Ohne diese
+          # Zeile zeigt die .env weiter auf `pokemon_database`; weil Session
+          # und Cache in der Datenbank liegen, endet dann JEDE Anfrage an den
+          # Testserver mit 500 -- und der Healthcheck unten läuft in seinen
+          # Timeout, statt den eigentlichen Grund zu nennen.
+          sed -i 's/^DB_DATABASE=.*/DB_DATABASE=pokemon_database_dusk/' .env
           php artisan key:generate
           php artisan key:generate --env=dusk.local
 
       - name: Datenbank migrieren
-        env:
-          DB_DATABASE: pokemon_database_dusk
         run: php artisan migrate --force
 
       - name: ChromeDriver aktualisieren
         run: php artisan dusk:chrome-driver --detect
 
       - name: Server starten
-        run: php artisan serve --no-reload &
+        # nohup und Umleitung sind beide nötig: Ohne Umleitung wartet der
+        # Runner am Schrittende auf die offene Ausgabe, ohne nohup räumt er
+        # den Prozess weg, bevor der nächste Schritt ihn erreicht.
+        run: nohup php artisan serve --no-reload > storage/logs/serve.log 2>&1 &
 
       - name: Warten, bis der Server antwortet
         run: |
@@ -142,7 +149,10 @@ jobs:
             curl -sf http://127.0.0.1:8000 > /dev/null && exit 0
             sleep 1
           done
-          echo "Server ist nicht hochgekommen"; exit 1
+          echo "Server ist nicht hochgekommen. Antwort und Server-Log:"
+          curl -sS -i http://127.0.0.1:8000 | head -n 40 || true
+          cat storage/logs/serve.log || true
+          exit 1
 
       - name: Dusk
         run: php artisan dusk
