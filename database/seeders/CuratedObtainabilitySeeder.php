@@ -106,6 +106,34 @@ class CuratedObtainabilitySeeder extends Seeder
     ];
 
     /**
+     * Omega Rubin / Alpha Saphir verschenken nach der Story weitere Starter.
+     *
+     * Prof. Birk gibt sie in drei Schueben, jeweils an einen Fortschritt
+     * gebunden. Die PokeAPI kennt nur den Encounter dahinter und fuehrt alle
+     * neun als Wildfang auf Route 101 -- dort laufen aber nur Zigzachs,
+     * Waumpel und Fiffyen herum.
+     *
+     * Quelle: Bulbapedia, "Professor Birch".
+     */
+    public const ORAS_GIFT_JOHTO = [
+        'chikorita' => ['omega-ruby', 'alpha-sapphire'],
+        'cyndaquil' => ['omega-ruby', 'alpha-sapphire'],
+        'totodile' => ['omega-ruby', 'alpha-sapphire'],
+    ];
+
+    public const ORAS_GIFT_UNOVA = [
+        'snivy' => ['omega-ruby', 'alpha-sapphire'],
+        'tepig' => ['omega-ruby', 'alpha-sapphire'],
+        'oshawott' => ['omega-ruby', 'alpha-sapphire'],
+    ];
+
+    public const ORAS_GIFT_SINNOH = [
+        'turtwig' => ['omega-ruby', 'alpha-sapphire'],
+        'chimchar' => ['omega-ruby', 'alpha-sapphire'],
+        'piplup' => ['omega-ruby', 'alpha-sapphire'],
+    ];
+
+    /**
      * Spiele, in denen ein Starter tatsaechlich auch wild vorkommt.
      *
      * In Let's Go laufen Bisasam, Glumanda und Schiggy wirklich in der Welt
@@ -138,6 +166,22 @@ class CuratedObtainabilitySeeder extends Seeder
             self::GIFTS, $games, $pokemon, ObtainMethod::Gift, Difficulty::Leicht,
             'Geschenk in Freezington (Kronen-Schneelande)',
             'Setzt den Erweiterungspass voraus.',
+        );
+
+        $this->seedGroup(
+            self::ORAS_GIFT_JOHTO, $games, $pokemon, ObtainMethod::Gift, Difficulty::Leicht,
+            'Geschenk von Prof. Birk nach dem Ligasieg',
+            'Eines der drei Johto-Starter, nach dem Ligasieg und dem Treffen mit Amara.',
+        );
+        $this->seedGroup(
+            self::ORAS_GIFT_UNOVA, $games, $pokemon, ObtainMethod::Gift, Difficulty::Leicht,
+            'Geschenk von Prof. Birk nach der Delta-Episode',
+            'Eines der drei Einall-Starter, nach Abschluss der Delta-Episode.',
+        );
+        $this->seedGroup(
+            self::ORAS_GIFT_SINNOH, $games, $pokemon, ObtainMethod::Gift, Difficulty::Leicht,
+            'Geschenk von Prof. Birk nach dem zweiten Ligasieg',
+            'Eines der drei Sinnoh-Starter, nach dem zweiten Einzug in die Ruhmeshalle.',
         );
 
         $this->entferneStarterwahlAlsWildfang($games, $pokemon);
@@ -235,7 +279,14 @@ class CuratedObtainabilitySeeder extends Seeder
     {
         $entfernt = 0;
 
-        foreach (self::STARTERS as $slug => $gameSlugs) {
+        $gruppen = array_merge_recursive(
+            self::STARTERS,
+            self::ORAS_GIFT_JOHTO,
+            self::ORAS_GIFT_UNOVA,
+            self::ORAS_GIFT_SINNOH,
+        );
+
+        foreach ($gruppen as $slug => $gameSlugs) {
             $pokemonId = $pokemon[$slug] ?? null;
 
             if ($pokemonId === null) {

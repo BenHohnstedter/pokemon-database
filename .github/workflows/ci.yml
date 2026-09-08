@@ -122,14 +122,27 @@ jobs:
         run: |
           cp .env.dusk.local.example .env.dusk.local
           cp .env.example .env
-          # Der MySQL-Dienst legt nur `pokemon_database_dusk` an. Ohne diese
-          # Zeile zeigt die .env weiter auf `pokemon_database`; weil Session
-          # und Cache in der Datenbank liegen, endet dann JEDE Anfrage an den
-          # Testserver mit 500 -- und der Healthcheck unten läuft in seinen
-          # Timeout, statt den eigentlichen Grund zu nennen.
+
+          # `php artisan serve` friert die Umgebung beim Start ein: Der
+          # Serverprozess liest die .env EINMAL, `artisan dusk` tauscht sie
+          # danach gegen .env.dusk.local -- und der Server bekommt davon nichts
+          # mehr mit. Weichen die beiden Dateien ab, laufen Testprozess und
+          # Server auf verschiedenen Datenbanken: Die Tests legen ihre Fixtures
+          # an, der Browser sieht sie nie und wartet sich tot.
+          #
+          # Deshalb bekommt die .env hier dieselben Werte, die auch in
+          # .env.dusk.local stehen. Der Tausch ändert dann nichts mehr.
           sed -i 's/^DB_DATABASE=.*/DB_DATABASE=pokemon_database_dusk/' .env
+          sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=file/' .env
+          sed -i 's/^CACHE_STORE=.*/CACHE_STORE=file/' .env
+
           php artisan key:generate
           php artisan key:generate --env=dusk.local
+
+          echo "--- .env (Auszug) ---"
+          grep -E '^(APP_ENV|APP_URL|DB_DATABASE|SESSION_DRIVER|CACHE_STORE)=' .env
+          echo "--- .env.dusk.local (Auszug) ---"
+          grep -E '^(APP_ENV|APP_URL|DB_DATABASE|SESSION_DRIVER|CACHE_STORE)=' .env.dusk.local
 
       - name: Datenbank migrieren
         run: php artisan migrate --force
@@ -157,9 +170,22 @@ jobs:
       - name: Dusk
         run: php artisan dusk
 
+      - name: Logs bei Fehlschlag ausgeben
+        if: failure()
+        run: |
+          echo "===== storage/logs/laravel.log (letzte 200 Zeilen) ====="
+          tail -n 200 storage/logs/laravel.log 2>/dev/null || echo "(keine)"
+          echo "===== storage/logs/serve.log ====="
+          cat storage/logs/serve.log 2>/dev/null || echo "(keine)"
+          echo "===== Browser-Konsole ====="
+          tail -n 50 tests/Browser/console/*.log 2>/dev/null || echo "(keine)"
+
       - name: Screenshots bei Fehlschlag sichern
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: dusk-screenshots
-          path: tests/Browser/screenshots
+          path: |
+            tests/Browser/screenshots
+            tests/Browser/console
+            storage/logs

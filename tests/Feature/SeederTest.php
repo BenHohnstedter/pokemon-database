@@ -113,3 +113,28 @@ it('kennt Cosmog als Geschenk aus den Kronen-Schneelanden', function () {
         ->and($quellen->first()->method->value)->toBe('gift')
         ->and($quellen->first()->note)->toContain('Erweiterungspass');
 });
+
+it('kennt die nachträglichen Starter-Geschenke aus Omega Rubin und Alpha Saphir', function () {
+    // Prof. Birk verschenkt nach der Story Johto-, Einall- und Sinnoh-Starter.
+    // Die PokéAPI führt alle neun als Wildfang auf Route 101 – dort laufen
+    // aber nur Zigzachs, Waumpel und Fiffyen herum (FEATURE-UPDATES.md 14).
+    $chelast = Pokemon::factory()->withBaseForm()->create(['slug' => 'turtwig', 'name_de' => 'Chelast']);
+    $oras = Game::where('slug', 'alpha-sapphire')->firstOrFail();
+
+    Obtainability::create([
+        'pokemon_id' => $chelast->id,
+        'game_id' => $oras->id,
+        'method' => 'wild',
+        'location_detail' => 'Hoenn Route 101 Area',
+        'source' => 'pokeapi',
+    ]);
+
+    $this->artisan('db:seed', ['--class' => CuratedObtainabilitySeeder::class])->assertSuccessful();
+
+    $quellen = Obtainability::where('pokemon_id', $chelast->id)->where('game_id', $oras->id)->get();
+
+    expect($quellen)->toHaveCount(1)
+        ->and($quellen->first()->method->value)->toBe('gift')
+        ->and($quellen->first()->location_detail)->toContain('Prof. Birk')
+        ->and($quellen->first()->note)->toContain('Sinnoh-Starter');
+});
