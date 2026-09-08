@@ -2,6 +2,50 @@
 
 Kurzer Stand je Session/Phase. Neuester Eintrag oben. Am Ende jeder Session aktualisieren.
 
+## 2026-09-08 (später) — Musik, und der Dusk-Job wird stillgelegt
+
+### Musik: drei CC0-Stücke statt Oszillatoren
+
+Der synthetisierte Hintergrund-Loop ist raus (FEATURE-UPDATES.md 15). Stattdessen
+spielt ein `<audio>`-Element drei ruhige Stücke von OpenGameArt, alle CC0, mit
+Weiterschalten in der Kopfzeile. Die Liste steht in `config/pokedex.php`, die
+Herkunft in `public/audio/HERKUNFT.md`.
+
+Originalmusik aus den Spielen liegt bewusst nicht im Repo — die Soundtracks
+gehören Nintendo/Game Freak/The Pokémon Company, und ein öffentliches
+Repository ist etwas anderes als ein Sprite unter Fan-Projekt-Vorbehalt.
+
+Die 8-Bit-Effekte bleiben synthetisiert.
+
+### Der Dusk-Job läuft nur noch von Hand
+
+Auf Wunsch des Nutzers (FEATURE-UPDATES.md 16). Drei echte Fehler wurden auf dem
+Weg dorthin gefunden und behoben:
+
+1. **Falsche Datenbank in der `.env`** — der MySQL-Dienst legt nur
+   `pokemon_database_dusk` an, die `.env` zeigte auf `pokemon_database`. Weil
+   Session und Cache in der Datenbank liegen, endete jede Anfrage mit 500.
+2. **Der Serverprozess überlebte die Schrittgrenze nicht** — Healthcheck grün,
+   danach `net::ERR_CONNECTION_REFUSED`. Server und Tests laufen jetzt im
+   selben Schritt.
+3. **Unreproduzierbarer CSS-Build** — Tailwind scannte den maschinenlokalen
+   Blade-Cache mit; 51,8 kB lokal gegen 39,1 kB im frischen Checkout.
+
+Danach: 8 von 13 grün auf dem Runner, 13 von 13 lokal — auch mit nachgestellter
+CI-Konfiguration. Die restlichen fünf scheitern an Inhalten, die im Runner nicht
+sichtbar sind (`0/4` auf dem Dashboard, „Pokédex" in der Navigation, die
+großgeschriebene Filterzeile). Der nächste Schritt wäre der Seitenquelltext aus
+dem Artefakt gewesen — der Job schreibt ihn inzwischen mit.
+
+Statt `main` dauerhaft rot zu halten, läuft der Job jetzt nur noch auf Zuruf
+(Actions → CI → „Run workflow"). Die Tests bleiben erhalten.
+
+### Tests: 307 grün
+
+303 vorher, vier neu in `MusikTest`: Stückliste vorhanden und Dateien auf
+Platte, Liste kommt in der Oberfläche an, Weiterschalten vorhanden,
+Herkunftsnachweis deckt jedes Stück ab.
+
 ## 2026-09-08 — ORAS-Starter, und warum Dusk lokal grün und in CI rot war
 
 ### Umgesetzt

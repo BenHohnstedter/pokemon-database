@@ -285,3 +285,49 @@ was zur Quelle passt: Sie werden in ORAS nicht verschenkt.
 Die drei Gruppen stehen als eigene Konstanten im Seeder, damit jede ihre
 eigene Bedingung als Notiz tragen kann. Die falschen Wildfang-Zeilen räumt
 derselbe Mechanismus wie in 12 weg.
+
+---
+
+## 2026-09-08 — Musik und ein stillgelegter CI-Job
+
+### 15. Echte Musikstücke statt des synthetisierten Loops
+
+Vom Nutzer gewünscht: ruhige Musik zum Danebenlaufen, mehrere Stücke zum
+Durchschalten. Der bisherige Hintergrund-Loop war aus Oszillatoren
+zusammengesetzt — vier Takte Bass, acht Töne Melodie. Als Beleg, dass es ohne
+fremde Assets geht, war er in Ordnung; zum Danebenlaufen taugt er nicht.
+
+Ersetzt durch drei Stücke aus OpenGameArt, alle **CC0**:
+
+| Titel | Urheber |
+|---|---|
+| Town Theme | cynicmusic |
+| A New Town | cynicmusic |
+| Exploring Town | Julie Damsgaard |
+
+**Keine Originalmusik aus den Spielen.** Die Soundtracks gehören
+Nintendo/Game Freak/The Pokémon Company. Sprites zeigt die App unter dem
+Fan-Projekt-Vorbehalt; vollständige Musikstücke in ein öffentliches Repository
+zu legen, ist etwas anderes. Die drei oben sind frei lizenziert und nur in der
+Stimmung verwandt.
+
+Die Liste steht in `config/pokedex.php` unter `music`, die Herkunft in
+`public/audio/HERKUNFT.md`. Ein weiteres Stück braucht drei Handgriffe: Datei
+ablegen, eintragen, dokumentieren — die Kopfzeile liest die Liste aus der
+Konfiguration, und der Test prüft mit, ob die Datei auch wirklich da liegt.
+
+Die 8-Bit-Effekte (Fangen, Shiny, Meilenstein) bleiben synthetisiert. Sie sind
+kurz, brauchen keinen Request und klingen genau richtig.
+
+### 16. Der Dusk-Job läuft nur noch auf Zuruf
+
+Auf dem GitHub-Runner scheitern fünf der dreizehn Browsertests, während
+dieselben dreizehn lokal durchlaufen — auch mit nachgestellter
+CI-Konfiguration. Ausgeschlossen sind inzwischen: falsche Datenbank, ein
+Serverprozess, der Schrittgrenzen nicht überlebt, und ein unreproduzierbarer
+CSS-Build (alle drei waren echte Fehler und sind behoben).
+
+Auf Wunsch des Nutzers läuft der Job jetzt nur noch von Hand
+(Actions → CI → „Run workflow"), statt `main` dauerhaft rot zu halten. Die
+Tests bleiben erhalten und sind vor größeren Umbauten weiter das Mittel der
+Wahl — lokal laufen sie durch.

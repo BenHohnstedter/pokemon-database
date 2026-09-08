@@ -293,6 +293,12 @@ Gesteuert wird das über `games.needs_transporter` und die Einstellung
 Privates Fan-Projekt ohne kommerzielle Absicht. Nicht als offizielles Produkt ausgeben,
 nicht verkaufen.
 
+Die Hintergrundmusik stammt von [OpenGameArt](https://opengameart.org/) und steht
+unter CC0 — Urheber und Quellen in
+[`public/audio/HERKUNFT.md`](public/audio/HERKUNFT.md). Originalmusik aus den
+Spielen liegt bewusst **nicht** im Repo: Die Soundtracks gehören Nintendo /
+Game Freak / The Pokémon Company.
+
 Das App-Icon (Pokéball) stammt von
 [Andreuvv](https://commons.wikimedia.org/wiki/User:Andreuvv), Datei
 [Poké Ball icon.svg](https://commons.wikimedia.org/wiki/File:Pok%C3%A9_Ball_icon.svg)
