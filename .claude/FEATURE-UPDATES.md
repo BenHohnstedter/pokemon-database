@@ -227,3 +227,37 @@ Grund: Solange die Komponenten `bg-white` und `text-gray-700` mitbringen, holt
 sich jede neue Seite das Weiß automatisch zurück. Die Bausteine benutzen jetzt
 dieselben CSS-Variablen wie der Rest (`--dex-*`), womit auch die vier Themes
 (Standard, Game Boy, Game Boy Pocket, CRT-Amber) auf diesen Seiten greifen.
+
+### 12. Die Starterwahl ist ein Geschenk, kein Wildfang
+
+Vom Nutzer gemeldet: Die Sinnoh-Starter standen mit „Wildfang, Lake Verity
+Before Galactic Intervention" in der Liste — dort fängt sie aber niemand, man
+bekommt sie zu Spielbeginn geschenkt.
+
+Ursache ist die PokéAPI: Sie führt die Übergabe des Starters als regulären
+Encounter im jeweiligen Startort. Neben dem kuratierten Geschenk-Eintrag stand
+damit eine zweite Zeile, die dasselbe Ereignis falsch benennt — quer durch alle
+Generationen (Alabastia, Neuborkia, Vita City, Aquarellia, Iki, Wedeldorf).
+
+`CuratedObtainabilitySeeder` räumt sie jetzt weg. Erkennungsmerkmal ist der
+**eine** Fundort: Die Starterwahl passiert an genau einem Ort, während ein
+wirklich wild vorkommender Starter mehrere Gebiete nennt. Zusätzlich sind die
+Let's-Go-Titel ausgenommen (`STARTER_ALSO_WILD`) — dort laufen Bisasam,
+Glumanda und Schiggy tatsächlich herum.
+
+Betroffen waren 97 Zeilen. Der nächste `pokedex:import-encounters` legt sie
+wieder an; der Seeder läuft laut README danach und räumt erneut auf.
+
+### 13. Cosmog kommt auch aus den Kronen-Schneelanden
+
+Vom Nutzer gemeldet: Cosmovum hing an der Bank-Frist, obwohl die Linie über
+Schwert/Schild erreichbar ist. Stimmt — im DLC *Kronen-Schneelande* steht
+Cosmog im Haus in Freezington und wird übergeben, nachdem der Angriff auf das
+Dorf beendet ist. Die PokéAPI kennt solche Geschenke nicht.
+
+Neu ist deshalb die Gruppe `GIFTS` im `CuratedObtainabilitySeeder`, vorerst mit
+diesem einen Eintrag, samt Notiz „Setzt den Erweiterungspass voraus."
+
+Ein Eintrag genügt für die ganze Linie: Cosmovum, Solgaleo und Lunala erben
+ihren Weg über `source_pokemon_id` von Cosmog. Für ein Konto mit Schwert steht
+Cosmovum damit auf 🟢 statt an der Frist.

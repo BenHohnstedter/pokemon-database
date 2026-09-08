@@ -2,6 +2,50 @@
 
 Kurzer Stand je Session/Phase. Neuester Eintrag oben. Am Ende jeder Session aktualisieren.
 
+## 2026-09-07 (später) — Starterwahl, Cosmog und ein CI-Job, der nie lief
+
+### Vom Nutzer gemeldet, umgesetzt
+
+1. **Starter standen als Wildfang in der Liste** (FEATURE-UPDATES.md 12). Die
+   PokéAPI führt die Übergabe des Starters als Encounter im Startort; neben dem
+   Geschenk-Eintrag stand deshalb eine zweite Zeile mit erfundenem Fundort. 97
+   solche Zeilen sind weg, erkannt am einzelnen Fundort — Let's Go bleibt
+   ausgenommen, dort laufen die Kanto-Starter wirklich herum.
+2. **Cosmog fehlte aus Schwert/Schild** (FEATURE-UPDATES.md 13). Das Geschenk
+   aus den Kronen-Schneelanden kennt die PokéAPI nicht. Mit dem einen Eintrag
+   fällt die ganze Linie von der Bank-Frist: Cosmovum steht für ein Konto mit
+   Schwert jetzt auf 🟢 statt „vor der Abschaltung übertragen".
+
+### Der Dusk-Job war schon vorher rot
+
+Der Lauf vor dieser Session ist an derselben Stelle gescheitert wie der danach
+— „Warten, bis der Server antwortet". Ursache war nicht Dusk, sondern die
+Umgebung: Der MySQL-Dienst im Workflow legt nur `pokemon_database_dusk` an, die
+`.env` zeigte aber weiter auf `pokemon_database`. Weil Session und Cache in der
+Datenbank liegen, endete **jede** Anfrage an den Testserver mit 500, und der
+Healthcheck lief 30 Sekunden lang in seinen Timeout.
+
+Lokal nachgestellt: `php artisan serve` mit einer nicht existierenden Datenbank
+liefert 500, `curl -sf` bricht mit Exitcode 22 ab — genau das Symptom.
+
+Behoben ist beides: Die `.env` wird im Workflow auf die Dusk-Datenbank
+umgebogen, der Server startet mit `nohup` und umgeleiteter Ausgabe (sonst
+wartet der Runner am Schrittende auf die offene Ausgabe), und schlägt der
+Healthcheck doch fehl, stehen jetzt Antwort und Server-Log im Log statt nur
+„Server ist nicht hochgekommen".
+
+### Tests: 302 grün, Pint sauber
+
+299 vorher, drei neu im `SeederTest`: Starterwahl wird entfernt, echte
+Let's-Go-Wildfänge bleiben, Cosmog steht in Schwert und Schild.
+
+### Offen, weil Spielwissen nötig
+
+- **Omega Rubin / Alpha Saphir zeigen Chelast weiter als „Wildfang, Hoenn Route
+  101"**. Das sieht nach demselben Muster aus (ein geschenkter Starter, den die
+  API als Encounter führt), steht aber nicht in der Starter-Liste dieser Titel.
+  Gehört bestätigt, bevor die Zeile fällt.
+
 ## 2026-09-07 — Lokales Setup auf dem neuen Rechner, Boxraster, dunkle Konto-Seiten
 
 ### Das Projekt läuft jetzt unter `C:/xampp`
