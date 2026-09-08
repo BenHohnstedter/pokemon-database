@@ -294,7 +294,8 @@ Privates Fan-Projekt ohne kommerzielle Absicht. Nicht als offizielles Produkt au
 nicht verkaufen.
 
 Die Hintergrundmusik stammt von [OpenGameArt](https://opengameart.org/) und steht
-unter CC0 — Urheber und Quellen in
+unter CC0 — dreizehn ruhige Stücke von Juhani Junkala, cynicmusic und Julie
+Damsgaard. Urheber und Quellen in
 [`public/audio/HERKUNFT.md`](public/audio/HERKUNFT.md). Originalmusik aus den
 Spielen liegt bewusst **nicht** im Repo: Die Soundtracks gehören Nintendo /
 Game Freak / The Pokémon Company.

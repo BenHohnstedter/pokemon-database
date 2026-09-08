@@ -331,3 +331,39 @@ Auf Wunsch des Nutzers läuft der Job jetzt nur noch von Hand
 (Actions → CI → „Run workflow"), statt `main` dauerhaft rot zu halten. Die
 Tests bleiben erhalten und sind vor größeren Umbauten weiter das Mittel der
 Wahl — lokal laufen sie durch.
+
+### 17. Die Konto-Seiten sprechen Deutsch
+
+Nachtrag zu 11: Dunkel waren Anmeldung, Registrierung und Profil danach, aber
+die Texte kamen weiter aus dem Breeze-Gerüst — „Email", „Log in", „Remember me".
+Der Grund war schlicht: `APP_LOCALE=de` war gesetzt, es gab nur keine
+Übersetzungen.
+
+Neu sind `lang/de.json` für die Oberflächentexte und `lang/de/auth.php`,
+`passwords.php`, `validation.php` für die Meldungen. Die Validierungsdatei deckt
+bewusst nur die Regeln ab, die diese App wirklich benutzt: Was fehlt, fällt über
+`APP_FALLBACK_LOCALE=en` auf die englische Fassung zurück — eine halb gepflegte
+Volldatei wäre schlechter als eine kurze, die stimmt.
+
+Nebenbei sind die englischen HTML-Kommentare aus dem Gerüst
+(`<!-- Confirm Password -->`) durch Blade-Kommentare ersetzt. Die wurden bis in
+den Browser mitgeliefert, ohne dort etwas zu tun.
+
+Ein Browsertest musste mit: Dusk drückt Schaltflächen über den *gerenderten*
+Text, und der heißt jetzt „REGISTRIEREN" statt „REGISTER".
+
+### 18. Dreizehn Stücke statt drei
+
+Erweiterung von 15. Der Nutzer wollte deutlich mehr zum Durchschalten, in der
+Stimmung der ruhigen Stücke aus den neueren Spielen.
+
+Dazugekommen sind zehn Stücke von **Juhani Junkala** aus den CC0-Paketen
+*JRPG Music Pack #4 [Calm]* und *#2 [Towns]* — sechs ruhige und vier
+Stadt-Themen. Die dem Paket beiliegende INFO.txt nennt CC0 ausdrücklich.
+
+Damit liegen rund **33 MB Audio** im Repo. Das ist der Preis dafür, dass die
+Musik ohne fremden Dienst funktioniert; wer klont, lädt sie mit. Ausdünnen geht
+jederzeit über die Liste in `config/pokedex.php`, und der Test merkt es, wenn
+Datei und Nachweis auseinanderlaufen.
+
+Weiterhin keine Originalmusik aus den Spielen — die Begründung steht in 15.

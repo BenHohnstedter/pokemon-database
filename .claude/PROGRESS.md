@@ -2,6 +2,35 @@
 
 Kurzer Stand je Session/Phase. Neuester Eintrag oben. Am Ende jeder Session aktualisieren.
 
+## 2026-09-08 (Nachmittag) — Deutsch auf den Konto-Seiten, dreizehn Stücke
+
+### Umgesetzt
+
+1. **Konto-Seiten auf Deutsch** (FEATURE-UPDATES.md 17). `lang/de.json` für die
+   Oberflächentexte, dazu `auth.php`, `passwords.php` und ein bewusst kurzes
+   `validation.php` — was dort fehlt, fällt über `APP_FALLBACK_LOCALE` auf
+   Englisch zurück. Die englischen HTML-Kommentare aus dem Breeze-Gerüst sind
+   durch Blade-Kommentare ersetzt; sie wurden bis in den Browser mitgeliefert.
+2. **Dreizehn Musikstücke statt drei** (FEATURE-UPDATES.md 18). Zehn
+   CC0-Stücke von Juhani Junkala aus den JRPG-Paketen *Calm* und *Towns*.
+   Rund 33 MB Audio im Repo — Ausdünnen geht über `config/pokedex.php`.
+
+### Ein Hinweis für die nächste Session
+
+Während der Dusk-Untersuchung stand die `.env` einige Minuten lang auf der
+Test-Konfiguration (leere Datenbank, anderer APP_URL). Der Nutzer hat genau in
+dem Fenster die Seite aufgerufen und eine kaputte App gesehen. Wer die `.env`
+für einen Test umbiegt, sagt vorher Bescheid oder benutzt eine
+Umgebungsvariable am Prozess statt der Datei — die App unter
+`http://localhost/dex-rescue` läuft nebenher weiter.
+
+### Tests: 309 grün
+
+307 vorher, zwei neu im `DarkUiTest`: Die Konto-Seiten zeigen deutsche Texte und
+keine englischen mehr, und Eingabefehler kommen auf Deutsch zurück. Die
+Musiktests hängen an der Konfiguration und decken die zehn neuen Stücke
+automatisch mit ab (110 Assertions statt 30).
+
 ## 2026-09-08 (später) — Musik, und der Dusk-Job wird stillgelegt
 
 ### Musik: drei CC0-Stücke statt Oszillatoren
