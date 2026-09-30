@@ -1,0 +1,29 @@
+name: pokemon-database
+
+services:
+  pokemon-database:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: pokemon-database
+    restart: unless-stopped
+    ports:
+      - "8085:80"
+    environment:
+      - APP_ENV=production
+    volumes:
+      - pokemon-storage:/var/www/html/storage
+      - pokemon-bootstrap:/var/www/html/bootstrap/cache
+    labels:
+      - "homelab.project=pokemon-database"
+      - "homelab.port=8085"
+    networks:
+      - homelab
+
+volumes:
+  pokemon-storage:
+  pokemon-bootstrap:
+
+networks:
+  homelab:
+    external: true
