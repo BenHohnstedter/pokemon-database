@@ -7,7 +7,7 @@ RUN npm run build
 
 FROM php:8.2-apache AS vendor
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev libzip-dev libicu-dev libxml2-dev git unzip \
+        libfreetype6-dev libjpeg62-turbo-dev libpng-dev libwebp-dev libzip-dev libicu-dev libxml2-dev libonig-dev git unzip \
     && rm -rf /var/lib/apt/lists/* \
     && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql mbstring zip intl bcmath fileinfo opcache xml
