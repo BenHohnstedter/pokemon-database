@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --prefer-dist --no-progress
+RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --no-scripts
 COPY . .
 COPY --from=assets /app/public/build /var/www/html/public/build
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
