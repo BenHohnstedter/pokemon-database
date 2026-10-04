@@ -42,7 +42,7 @@
                             <span class="block text-[10px] text-dex-danger">Event vorbei</span>
                         @endif
                     </td>
-                    <td class="py-2 pr-3 text-dex-muted">{{ $quelle->location_detail ?: '—' }}</td>
+                    <td class="py-2 pr-3 text-dex-muted"><x-location-detail :quelle="$quelle" /></td>
                     <td class="py-2 text-[11px]">
                         @if ($quelle->game->home_compatible && ! $quelle->game->bank_only)
                             <span class="text-dex-success">direkt an HOME</span>

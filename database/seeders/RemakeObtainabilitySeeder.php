@@ -97,6 +97,7 @@ class RemakeObtainabilitySeeder extends Seeder
                 [
                     'pokemon_form_id' => null,
                     'location_detail' => $quelle->location_detail,
+                    'locations' => $quelle->locations,
                     'difficulty' => $quelle->difficulty?->value,
                     'event_expired' => false,
                     'note' => 'Aus dem Originalspiel übernommen – das Remake enthält '

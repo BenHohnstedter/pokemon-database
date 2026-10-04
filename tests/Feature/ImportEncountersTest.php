@@ -30,7 +30,18 @@ function begegnung(string $gebiet, array $versionen): array
     ];
 }
 
-it('legt pro Spiel einen Fundort an', function () {
+/** Antwort für /location-area/{slug} mit deutschem Namen. */
+function ortsname(string $deutsch): array
+{
+    return [
+        'location' => ['url' => 'https://pokeapi.co/api/v2/location/1/'],
+        'names' => [
+            ['language' => ['name' => 'de'], 'name' => $deutsch],
+        ],
+    ];
+}
+
+it('legt pro Spiel einen Fundort an und nennt ihn auf Deutsch', function () {
     $this->seed(GameSeeder::class);
     $pokemon = Pokemon::factory()->withBaseForm()->create(['slug' => 'pikachu']);
 
@@ -38,14 +49,39 @@ it('legt pro Spiel einen Fundort an', function () {
         '*/pokemon/pikachu/encounters' => Http::response([
             begegnung('kanto-route-2-south-towards-viridian-city', ['red' => 20, 'blue' => 20]),
         ]),
+        '*/location-area/*' => Http::response(ortsname('Route 2 im Süden von Vertania City')),
     ]);
 
     $this->artisan('pokedex:import-encounters')->assertSuccessful();
 
+    $quelle = Obtainability::first();
+
     expect(Obtainability::count())->toBe(2)
-        ->and(Obtainability::first()->method)->toBe(ObtainMethod::Wild)
-        ->and(Obtainability::first()->source)->toBe('pokeapi')
-        ->and(Obtainability::first()->location_detail)
+        ->and($quelle->method)->toBe(ObtainMethod::Wild)
+        ->and($quelle->source)->toBe('pokeapi')
+        ->and($quelle->location_detail)->toBe('Route 2 im Süden von Vertania City')
+        // Slug und deutscher Name zusammen: daraus baut die Anzeige den Link.
+        ->and($quelle->locationAreas())->toBe([[
+            'slug' => 'kanto-route-2-south-towards-viridian-city',
+            'name_de' => 'Route 2 im Süden von Vertania City',
+        ]])
+        ->and($quelle->locationsTruncated())->toBeFalse();
+});
+
+it('kann mit --no-translate auf die englischen Namen zurückfallen', function () {
+    $this->seed(GameSeeder::class);
+    Pokemon::factory()->withBaseForm()->create(['slug' => 'pikachu']);
+
+    Http::fake([
+        '*/pokemon/pikachu/encounters' => Http::response([
+            begegnung('kanto-route-2-south-towards-viridian-city', ['red' => 20]),
+        ]),
+    ]);
+
+    $this->artisan('pokedex:import-encounters', ['--no-translate' => true])->assertSuccessful();
+
+    // preventStrayRequests hätte einen location-area-Abruf als Fehler gemeldet.
+    expect(Obtainability::first()->location_detail)
         ->toBe('Kanto Route 2 South Towards Viridian City');
 });
 
@@ -57,6 +93,7 @@ it('ordnet die DLC-Gebiete dem jeweiligen Hauptspiel zu', function () {
         '*encounters' => Http::response([
             begegnung('isle-of-armor-fields-of-honor', ['the-isle-of-armor' => 15]),
         ]),
+        '*/location-area/*' => Http::response(ortsname('Felder der Ehre')),
     ]);
 
     $this->artisan('pokedex:import-encounters')->assertSuccessful();
@@ -89,15 +126,19 @@ it('fasst viele Gebiete zu einer lesbaren Angabe zusammen', function () {
                 ->map(fn (int $i) => begegnung("hoehle-{$i}", ['red' => 10]))
                 ->all()
         ),
+        '*/location-area/*' => Http::response(ortsname('Deutscher Ort')),
     ]);
 
     $this->artisan('pokedex:import-encounters')->assertSuccessful();
 
-    $detail = Obtainability::first()->location_detail;
+    $quelle = Obtainability::first();
+    $detail = $quelle->location_detail;
 
     // Höchstens vier Gebiete, danach ein Hinweis statt einer endlosen Liste.
     expect(substr_count($detail, ','))->toBe(3)
-        ->and($detail)->toEndWith('u.a.');
+        ->and($detail)->toEndWith('u.a.')
+        ->and($quelle->locationAreas())->toHaveCount(4)
+        ->and($quelle->locationsTruncated())->toBeTrue();
 });
 
 it('bricht ohne importierte Pokémon mit einem Hinweis ab', function () {

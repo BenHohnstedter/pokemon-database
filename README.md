@@ -77,6 +77,11 @@ php artisan pokedex:import
 php artisan pokedex:import-encounters
 ```
 
+Der Fundort-Import lädt jetzt automatisch **deutsche Ortsnamen** von der PokéAPI
+und speichert jede Location strukturiert (Slug + deutscher Name), damit sich in
+der Anzeige jeder Fundort direkt im PokéWiki nachschlagen lässt. Für einen
+schnellen Lauf ohne Netz steht `--no-translate` zur Verfügung.
+
 ```bash
 php artisan pokedex:recalculate
 ```
@@ -132,7 +137,7 @@ Nützliche Optionen:
 | `pokedex:import --from= --to= --limit=` | Nur einen Dex-Ausschnitt laden |
 | `pokedex:import --include-other-forms` | Auch Sonderformen jenseits der Regionalformen anlegen |
 | `pokedex:import --fresh-cache` | Plattencache leeren und alles neu abrufen |
-| `pokedex:import-encounters --translate-locations` | Deutsche Ortsnamen mitladen (deutlich mehr Requests) |
+| `pokedex:import-encounters --no-translate` | Fundorte ohne deutsche Übersetzung laden (Notbehelf) |
 | `pokedex:fill-gaps --dry-run` | Zeigen, für welche Arten die PokéAPI keinen Fundort kennt |
 | `pokedex:fill-gaps --remove` | Die angenommenen Einträge wieder entfernen |
 | `pokedex:import-sources datei.csv` | Kuratierte Bezugsquellen aus CSV nachladen |

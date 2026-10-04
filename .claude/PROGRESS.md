@@ -2,6 +2,98 @@
 
 Kurzer Stand je Session/Phase. Neuester Eintrag oben. Am Ende jeder Session aktualisieren.
 
+## 2026-09-12 — Bugfix: „Dringend – Bank-Deadline" zeigte 0
+
+### Umgesetzt
+
+1. **Ursache.** `PriorityEngine` hat für die Bank-Frist nur Quellen betrachtet, die
+   heute noch ein Exemplar liefern (`isUsableSource()`). Bei den klassischen
+   Bank-Event-Mon (Deoxys, Phione, Shaymin, Keldeo, Meloetta, Genesect, Diancie,
+   Hoopa, Volcanion, Marshadow, Zeraora, Zarude) ist das Event seit Jahren vorbei –
+   die Quelle flog raus, es blieb `TradeOnly` mit `bankDeadline=false`, und die
+   Kategorie „Dringend – Bank-Deadline" war leer. Genau das war ein Fehler: Wer so
+   ein Pokémon noch in einer Bank liegen hat, kommt nur über Pokémon Bank daran
+   heraus, egal ob das Event noch läuft.
+2. **Fix.** `evaluateSources()` bekommt zusätzlich `historisch` (alle je bekannten
+   Quellen inklusive abgelaufener). Ist jeder historische Weg ein Bank-Weg und
+   gibt es keinen Weg ohne Bank, kommt `PriorityResult` mit `level=BankUrgent` und
+   `bankDeadline=true` samt Fundort- und Konsolenliste der historischen Quellen.
+   Bewusst nicht ausgewertet wird, wenn ein Weg ohne Bank existiert (auch ein
+   abgelaufener im HOME-Spiel), wenn GO das Pokémon führt (spec.md 2.4) oder wenn
+   dem Nutzer Poké Transporter fehlt – dann hilft auch keine Frist mehr.
+3. **Tests.** Der bisherige Test „abgelaufenes Event = nur noch per Tausch" hat den
+   Fehler festgeschrieben und wurde umgestellt; neu dazu ein Gegentest mit
+   zusätzlichem abgelaufenen Weg ohne Bank (bleibt ⚪ `TradeOnly`). Für Gast und
+   für „besitzt Pokémon Diamant" verifiziert: 11 Mythicals neu 🔴, Darkrai und
+   Arceus bleiben außen vor (sie haben Quellen in BDSP), Meltan/Melmetal ebenso.
+
+### Tests: 318 grün (951 Assertions)
+
+Pint sauber.
+
+## 2026-09-12 — Echte Fundorte für Lücken-Arten, GO-Datenbank importiert
+
+### Umgesetzt
+
+1. **Kuratierte Echt-Fundorte** (FEATURE-UPDATES.md 25). `CuratedObtainabilitySeeder`
+   ersetzt die Platzhalter aus `pokedex:fill-gaps` für Arten, deren Fundort die
+   PokéAPI nicht kennt: `ECHTE_FUNDORTE` (echte Einträge pro Edition),
+   `EVOLUTIONS_LUECKEN` (reine Entwicklungen → Fallback weg), `OHNE_FALLBACK`
+   (Versionsexklusive → nur Gegenstück räumen). Grundlage ist die Migration
+   `2026_09_11_000010_add_locations_to_obtainabilities_table`.
+2. **Fünf übersehene Arten nachgezogen.** Nach dem ersten Seeder-Lauf blieben 10
+   `generation-fallback`-Zeilen übrig: Arctibax, Baxcalibur, Bellibolt, Frigibax,
+   Rabsca (je Karmesin+Purpur). Recherchiert: Bellibolt/Frigibax/Arctibax sind
+   (sehr selten) wild fangbar, Baxcalibur und Rabsca nur per Entwicklung.
+   Seeder erweitert; jetzt sind **0 generation-fallback-Zeilen** mehr in der
+   Live-DB. Recalculate: 102 Arten über Vorstufe, 17 ohne Fundweg (Mythicals +
+   abgelaufene Raid-Events — die Bank-Frist dieser Arten ist oben behoben).
+3. **GO-Datenbank** (FEATURE-UPDATES.md 26). Neue CSV `database/data/go_fundorte.csv`
+   (33 Arten) nach Live-DB importiert: Quabbel, Pumpkaboo, Oricorio, Zygarde,
+   Indeedee, die Gen-9-Starter aus GO (Pawmi, Tandemaus, Smoliv, …) inkl. Wumms
+   (12-km-Ei) und Beltra (Goldene PokéStops). `pokedex:import-go` verarbei dies.
+   Recalculate danach: GO-Informationen fließen in die Prioritäts-Engine ein.
+
+### Offen und bewusst nicht geraten
+
+- Kein Push nach GitHub — bislang nur lokale Commits (so abgestimmt).
+
+### Tests: 316 grün (939 Assertions)
+
+6 bestehende Seeder-Tests aus der Vor-Session wurden ergänzt um einen Test für
+die Paldea-Ergänzungen (seltene Wildfänge + reine Entwicklungen). Pint sauber.
+
+## 2026-09-11 — Deutsche Fundorte, Generationsdeckel, PokéWiki-Links
+
+### Umgesetzt
+
+1. **Deutsche Fundortnamen** (FEATURE-UPDATES.md 22). `pokedex:import-encounters`
+   übersetzt jetzt standardmäßig die Fundortangaben in die deutsche Sprache
+   (über die PokéAPI). Das bisherige Flag `--translate-locations` wird als
+   veraltetes No-Op akzeptiert; neu ist `--no-translate` als Notbehelf.
+   Die Ortsnamen werden strukturiert als JSON (`locations`) gespeichert.
+2. **Generationsdeckel in der Spielansicht** (FEATURE-UPDATES.md 23). Evolutionen
+   aus späteren Generationen werden nicht mehr für frühere Spiele angezeigt
+   (z.B. Farigiraf nicht mehr in X/Y).
+3. **PokéWiki-Links** (FEATURE-UPDATES.md 24). Strukturierte Fundorte werden
+   pro Gebiet als Link zur deutschen PokéWiki-Seite gerendert, um die
+   Fangwahrscheinlichkeiten nachzuschlagen. Blade-Komponente `x-location-detail`.
+
+### Offen und bewusst nicht geraten
+
+- Nach der Änderung muss der Fundort-Import einmal laufen, damit die deutschen
+  Namen übernommen werden: `php artisan pokedex:import-encounters`, danach
+  `php artisan db:seed` für die Remakes.
+- Kein Push nach GitHub — bislang nur lokale Commits (so abgestimmt).
+
+### Tests: 310 grün (914 Assertions)
+
+307 vorher, drei neu: Generationsdeckel in der Spielansicht (GameViewTest),
+strukturierte Fundorte mit Germanisierung (ImportEncountersTest), PokéWiki-
+Link auf der Detailseite (PokedexTest). Zwei bestehende Tests wurden aktualisiert,
+um die mitgelieferten Location-Area-Fakes für die Germanisierung zu
+berücksichtigen. Pint sauber.
+
 ## 2026-09-08 (Abend) — Musik raus, Legenden: Z-A rein, Datenlücken geschlossen
 
 ### Umgesetzt

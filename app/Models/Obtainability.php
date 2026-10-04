@@ -16,7 +16,7 @@ class Obtainability extends Model
 
     protected $fillable = [
         'pokemon_id', 'pokemon_form_id', 'game_id', 'method',
-        'location_detail', 'difficulty', 'event_expired', 'note', 'source',
+        'location_detail', 'locations', 'difficulty', 'event_expired', 'note', 'source',
     ];
 
     protected function casts(): array
@@ -25,6 +25,7 @@ class Obtainability extends Model
             'event_expired' => 'boolean',
             'method' => ObtainMethod::class,
             'difficulty' => Difficulty::class,
+            'locations' => 'array',
         ];
     }
 
@@ -57,5 +58,39 @@ class Obtainability extends Model
     public function isUsableSource(): bool
     {
         return ! $this->event_expired && $this->method !== ObtainMethod::TransferOnly;
+    }
+
+    /**
+     * Einzelne Gebiete dieser Quelle, wenn sie strukturiert vorliegen.
+     *
+     * Nur `pokedex:import-encounters` füllt das Feld – CSV- und kuratierte
+     * Zeilen tragen ausschließlich den Anzeigetext in `location_detail` und
+     * bekommen deshalb keine Links.
+     *
+     * @return array<int,array{slug:string,name_de:string}>
+     */
+    public function locationAreas(): array
+    {
+        if (! is_array($this->locations)) {
+            return [];
+        }
+
+        return $this->locations['areas'] ?? [];
+    }
+
+    /** Wurde die Ortsliste zugunsten der Lesbarkeit gekürzt ("u.a.")? */
+    public function locationsTruncated(): bool
+    {
+        if (! is_array($this->locations)) {
+            return false;
+        }
+
+        return (bool) ($this->locations['truncated'] ?? false);
+    }
+
+    /** PokéWiki-Artikel zu einem deutschen Ortsnamen – externe Fundort-Details. */
+    public function locationWikiUrl(string $name): string
+    {
+        return 'https://www.pokewiki.de/'.rawurlencode(str_replace(' ', '_', $name));
     }
 }

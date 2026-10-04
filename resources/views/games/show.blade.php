@@ -145,7 +145,7 @@
                             </td>
                             <td class="py-2 pr-3">{{ $row->quelle->method->label() }}</td>
                             <td class="py-2 pr-3 text-dex-muted">
-                                {{ $row->quelle->location_detail ?: '—' }}
+                                <x-location-detail :quelle="$row->quelle" />
                             </td>
                             <td class="py-2 pr-3">
                                 <x-priority-badge :priority="$row->priority->level" :show-label="false" />

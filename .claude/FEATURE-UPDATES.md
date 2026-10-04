@@ -419,3 +419,147 @@ steht dort Feurigel, nicht Igelavar.
 Die Zeilen sind bewusst **nicht** in der Datenbank: Sie beschreiben keinen
 Fundort, sondern eine Folgerung aus der Linie. Gespeichert wären sie Redundanz,
 die beim nächsten Import auseinanderläuft.
+
+---
+
+## 2026-09-11 — Deutsche Fundorte, Generationsdeckel, PokéWiki-Links
+
+### 22. Fundorte sind jetzt auf Deutsch (und verlinkbar)
+
+Vom Nutzer gemeldet: Fundortangaben standen auf Englisch (humanisierte PokéAPI-Slugs
+wie „Kanto Route 2 South Towards Viridian City"). Für ein deutschsprachiges Tool war
+das fehl am Platz.
+
+`pokedex:import-encounters` übersetzt jetzt **standardmäßig** mit. Pro Gebiet wird
+über die PokéAPI der deutsche Name ermittelt (erst Location-Area, dann übergeordneter
+Ort als Fallback). Ein `--no-translate`-Flag steht als Notbehelf für einen schnellen
+Lauf ohne Netz zur Verfügung; das alte `--translate-locations` wird als veraltetes
+No-Op akzeptiert, damit bestehende Skripte nicht brechen.
+
+Neben dem Anzeigetext (`location_detail`) werden die Gebiete jetzt strukturiert
+abgelegt: eine neue JSON-Spalte `locations` auf `obtainabilities` speichert pro
+Fundort-Quelle die einzelnen Gebiete mit Slug und deutschem Namen. Daraus leitet die
+Oberfläche pro Ort einen Link auf die deutsche PokéWiki-Artikelseite ab — EIN Klick
+genügt, um nachzuschlagen, welche Pokémon dort vorkommen und mit welcher
+Wahrscheinlichkeit.
+
+CSV- und kuratierte Einträge (Starter, Fossilien, Remake-Daten) bleiben vom reinen
+Anzeigetext abhängig; sie bekommen keinen Link. Remake-Einträge erben die
+strukturierten Ortsdaten der Originalspiele über `RemakeObtainabilitySeeder`.
+
+**Befehle zur Nachlieferung:**
+
+```bash
+php artisan pokedex:import-encounters   # — jetzt mit deutscher Übersetzung
+php artisan db:seed                     # — Remakes aktualisieren
+```
+
+### 23. Spielansicht blendet Evolutionen aus späteren Generationen aus
+
+Vom Nutzer gemeldet: In X/Y wurde für Felino (Wooper, Gen 2) die Weiterentwicklung
+Suelord (Clodsire, Gen 9) angezeigt, obwohl Clodsire in keiner Generation existiert,
+die vor Generation 9 erschienen ist. Dieselbe Fehlerquelle traf Girafarig →
+Farigiraf und Dummisel → Dummimisel (beide Gen 9) in Gen-6-Titeln.
+
+Ursache war `zeilenUeberEntwicklung` im GameController: Der Algorithmus schaute
+nur, ob die Vorstufe (`source_pokemon_id`) im jeweiligen Spiel vorkommt – nicht,
+ob die Entwicklung selbst in dieser Generation überhaupt existiert. Ein Tier wie
+Clodsire wurde deshalb fälschlich als Entwicklungs-Weg angezeigt, nur weil
+dessen Vorstufe im Kalos-Pokedex vorkam.
+
+Behoben durch einen zusätzlichen Generationsdeckel:
+
+```php
+$pokemon->generation <= $game->generation
+```
+
+### 24. Fundorte sind mit PokéWiki verlinkt
+
+Neue Blade-Komponente `x-location-detail`: Strukturierte Fundorte (PokeAPI) werden
+pro Gebiet als verlinkter Text gerendert; ein Klick führt zur deutschen
+PokéWiki-Artikelseite dieses Ortes, die auflistet, welche Pokémon dort vorkommen,
+mit welchem Fangweg und welcher Wahrscheinlichkeit. Die Komponente wird in der
+Bezugsquellen-Tabelle (Detailseite) und in der Spielansicht gleichermaßen genutzt;
+Einträge ohne strukturierte Daten (CSV, kuratiert, Fallback) zeigen weiterhin
+den reinen Text.
+
+### 25. Kuratierte Echt-Fundorte ersetzen Generation-Fallbacks
+
+`pokedex:fill-gaps` hinterlässt für bestimmte Arten (Versionsexklusive, Legenden,
+Mythicals, Seltene) Platzhalter-Zeilen mit `source='generation-fallback'` und
+Detail-Text „Fundort noch nicht hinterlegt". Diese Einträge haben nie einen
+tatsächlichen Fundweg und verwirren nur — die Art ist falsch markiert als
+„Fundweg unbekannt", obwohl ein realer Fangweg existiert (z.B. StaticEncounter
+im richtigen Spiel oder eine kontrolliert kuratierte Quelle).
+
+Lösung: `CuratedObtainabilitySeeder` konkretisiert den Fundort mit drei
+Konstanten:
+
+| Konstante | Zweck |
+|---|---|
+| `ECHTE_FUNDORTE` | Arten mit bekanntem Fangweg – pro Edition (Method, Detail, Difficulty, optional areas/Note). Wird via `updateOrCreate` über den bestehenden Platzhalter geschrieben; `source='curated'`. |
+| `EVOLUTIONS_LUECKEN` | Reine Endstufen (Jellicent, Toedscruel, Baxcalibur, Rabsca etc.), deren einziger Weg die Entwicklung aus einer Vorstufe ist – Fallback wird gelöscht, `recalculate` zeigt „Entwicklung aus …". |
+| `OHNE_FALLBACK` | Versionsexklusive, die im Gegenstück gar nicht vorkommen (Tornadus/Thundurus/SwSh-Legenden, Karmesin/Purpur-Exklusive inkl. abgelaufener Raid-Events) – Fallback nur im Gegenstück löschen. |
+
+Der `run()`-Aufruf folgt auf `seedDynamaxAbenteuer`; danach löscht
+`entferneBehandelteLuecken()` die rechtskräftigen Fallbacks.
+
+Voraussetzung für die `locations`-JSON-Spalte: Migration
+`2026_09_11_000010_add_locations_to_obtainabilities_table.php`.
+
+**Befehle:**
+
+```bash
+php artisan db:seed --class=CuratedObtainabilitySeeder   # Echt-Fundorte eintragen
+php artisan pokedex:recalculate                          # Evolution/Quellen neu berechnen
+```
+
+### 26. Pokémon-GO-Datenbank: CSV-Import für GO-Verfügbarkeit
+
+In den Arten, die der `GoAvailabilitySeeder` nicht abdeckt, wurden über
+eine CSV-Datei `database/data/go_fundorte.csv` die Dringlichkeits-relevanten
+GO-Farmwege importiert. Für die Prioritäts-Engine zählt `isReliablyFarmable()`
+— `wild`, `egg`, `raid`, `evolution_only` — als ausreichende Quelle für die
+Bank-Deadline-Entschärfung; `research`-Wege (z.B. Zygarde via Routen, Glimmet)
+werden als zusätzliche Info angezeigt, ohne die Deadline zu kürzen.
+
+Die 33 importierten Arten umfassen Gen-5-Basen wie Quabbel (frillish),
+Gen-9-Vielfalt wie Pawmi, Tandemaus, Smoliv, Wumms (varoom/12-km-Ei) und
+Beltra (Gimmighoul/Goldene PokéStops). Die Datei ist UTF-8 mit Semikolon-Trennung.
+
+**Befehle:**
+
+```bash
+php artisan pokedex:import-go database/data/go_fundorte.csv   # 33 Einträge
+php artisan pokedex:recalculate                               # Quellen neu berechnen
+```
+
+### 27. Bugfix: „Dringend – Bank-Deadline" zeigte 0
+
+**Problem.** Die Kategorie „Dringend – Bank-Deadline" war für Nutzer leer (0), obwohl
+zahllose Pokémon nur über Pokémon Bank aus einer Bank herauskommen. Die
+Prioritäts-Engine hatte für die Frist nur Quellen geprüft, die heute noch ein
+Exemplar liefern. Bei den Bank-Event-Mon (Deoxys, Phione, Shaymin, Keldeo,
+Meloetta, Genesect, Diancie, Hoopa, Volcanion, Marshadow, Zeraora, Zarude) ist das
+Event seit Jahren vorbei – die Quelle fiel raus, es blieb ⚪ „nur noch per Tausch"
+mit `bankDeadline=false`.
+
+**Lösung.** Die Frist hängt nicht am heutigen Fundweg, sondern daran, dass ein
+Exemplar noch in einer Bank liegt. `evaluateSources()` bekommt deshalb zusätzlich
+`historisch` (alle je bekannten Quellen, inklusive abgelaufener). Sind alle
+historischen Wege Bank-Wege und existiert kein Weg ohne Bank, wird das Ergebnis 🔴
+`BankUrgent` mit `bankDeadline=true`; als Routen/Konsolen dienen die historischen
+Quellen.
+
+**Nicht** zu einer Bank-Frist führen:
+
+- ein Weg ohne Bank – auch ein abgelaufener im HOME-Spiel (Darkrai, Arceus haben
+  solche Quellen in BDSP und gehören deshalb *nicht* in die Kategorie),
+- ein GO-Weg, der die Frist sowieso entschärft (spec.md 2.4),
+- fehlender Poké Transporter: dann kommt das Pokémon ohnehin nicht aus der Bank
+  heraus, und eine Frist wäre wertlos.
+
+**Tests.** Der alte Test „abgelaufenes Event = nur noch per Tausch" hat den Fehler
+festgeschrieben und wurde auf das neue Verhalten umgestellt; neu ist ein Gegentest
+mit zusätzlichem abgelaufenen Weg ohne Bank (bleibt ⚪ `TradeOnly`).
+

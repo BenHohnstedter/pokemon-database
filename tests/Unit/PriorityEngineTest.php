@@ -190,7 +190,7 @@ it('behandelt ein Community-Day-Pokémon nicht als verlässlichen GO-Weg', funct
     expect($result)->toHavePriority(PriorityLevel::BankUrgent);
 });
 
-it('meldet ein abgelaufenes Event als nur noch per Tausch erreichbar', function () {
+it('meldet ein abgelaufenes Bank-Event als Bank-Deadline statt als reinen Tausch', function () {
     $form = form();
     $game = GameFactory::new()->bankOnly()->create();
     Obtainability::factory()->expiredEvent()->create([
@@ -205,8 +205,32 @@ it('meldet ein abgelaufenes Event als nur noch per Tausch erreichbar', function 
         obtainabilities: sources($form),
     );
 
-    expect($result)->toHavePriority(PriorityLevel::TradeOnly)
+    expect($result)->toHavePriority(PriorityLevel::BankUrgent)
+        ->and($result->bankDeadline)->toBeTrue()
         ->and($result->difficulty)->toBe(Difficulty::SehrSchwer)
+        ->and($result->obtainableAtAll)->toBeFalse();
+});
+
+it('meldet kein Bank-Deadline, wenn es auch einen abgelaufenen Weg ohne Bank gab', function () {
+    $form = form();
+    Obtainability::factory()->expiredEvent()->create([
+        'pokemon_id' => $form->pokemon_id,
+        'game_id' => GameFactory::new()->bankOnly()->create()->id,
+    ]);
+    Obtainability::factory()->expiredEvent()->create([
+        'pokemon_id' => $form->pokemon_id,
+        'game_id' => GameFactory::new()->modern()->create()->id,
+    ]);
+
+    $result = $this->engine->evaluate(
+        $form,
+        new PriorityContext,
+        owned: false,
+        obtainabilities: sources($form),
+    );
+
+    expect($result)->toHavePriority(PriorityLevel::TradeOnly)
+        ->and($result->bankDeadline)->toBeFalse()
         ->and($result->obtainableAtAll)->toBeFalse();
 });
 

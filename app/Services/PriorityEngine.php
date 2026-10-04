@@ -43,10 +43,12 @@ class PriorityEngine
             );
         }
 
-        $alle = $this->usableSources($obtainabilities ?? $this->loadSources($form));
+        $alleRoh = $obtainabilities ?? $this->loadSources($form);
+        $alle = $this->usableSources($alleRoh);
         $sources = $this->erreichbareSources($alle, $context);
         $ergebnis = $this->evaluateSources(
             $sources, $context, $go,
+            historisch: $alleRoh,
             transporterFehlt: $sources->count() < $alle->count(),
         );
 
@@ -81,6 +83,7 @@ class PriorityEngine
                 evolutionSteps: $fallback->steps,
                 prefix: $fallback->label().' · ',
                 transporterFehlt: $vorstufe->count() < $alleDerVorstufe->count(),
+                historisch: $fallback->sources,
             );
 
             if ($ueberVorstufe->level->hardship() < $ergebnis->level->hardship()) {
@@ -95,6 +98,8 @@ class PriorityEngine
      * Die eigentliche Stufenlogik für einen Satz Bezugsquellen.
      *
      * @param  Collection<int,Obtainability>  $sources
+     * @param  Collection<int,Obtainability>|null  $historisch  alle je bekannten Quellen,
+     *                                                          auch abgelaufene – nur für die Bank-Frist
      */
     private function evaluateSources(
         Collection $sources,
@@ -103,6 +108,7 @@ class PriorityEngine
         int $evolutionSteps = 0,
         string $prefix = '',
         bool $transporterFehlt = false,
+        ?Collection $historisch = null,
     ): PriorityResult {
         /*
         | Schwierigkeit und Konsolenliste werden bewusst erst in dem Zweig
@@ -172,6 +178,26 @@ class PriorityEngine
                 $inGo => 'Kein regulärer Fangweg mehr – in GO nur außerhalb Deiner Region oder über Events.',
                 default => 'Event ist vorbei, kein regulärer Fangweg mehr – nur über Tauschbörsen/Community.',
             };
+
+            /*
+            | Die Bank-Frist hängt nicht daran, ob der Fundweg heute noch offen
+            | ist: Wer das Pokémon in einer Bank liegen hat, kommt nur noch über
+            | Pokémon Bank daran heraus – auch wenn das Event seit Jahren vorbei
+            | ist. Deshalb zählt hier der je bekannte Weg, nicht der nutzbare.
+            | Ein GO-Weg bleibt die Ausnahme, und ohne Poké Transporter ist die
+            | Frist ohnehin wertlos, weil der Weg nach Bank fehlt (spec.md 2.4).
+            */
+            if ($this->nurBankWege($historisch) && ! $inGo && ! $transporterFehlt) {
+                return new PriorityResult(
+                    level: PriorityLevel::BankUrgent,
+                    difficulty: Difficulty::SehrSchwer,
+                    reason: 'Der einzige Weg nach HOME führte über Pokémon Bank – vor der Abschaltung erledigen!',
+                    routes: $this->routeLabels($historisch, $prefix),
+                    consoles: $this->consolesFrom($historisch),
+                    obtainableAtAll: false,
+                    bankDeadline: true,
+                );
+            }
 
             return new PriorityResult(
                 level: PriorityLevel::TradeOnly,
@@ -359,6 +385,29 @@ class PriorityEngine
                 $q->whereNull('pokemon_form_id')->orWhere('pokemon_form_id', $form->id);
             })
             ->get();
+    }
+
+    /**
+     * Führte jeder je bekannte Weg nach HOME ausschließlich über Pokémon Bank?
+     *
+     * Bewusst ohne Blick auf `isUsableSource()`: Die Frist hängt daran, dass ein
+     * Exemplar heute noch in einer Bank liegt – nicht daran, ob das Event noch
+     * läuft. Ein Weg ohne Bank (auch ein abgelaufener in einem HOME-Spiel) nimmt
+     * der Frist dagegen die Dringlichkeit, weil es dann einen Ausweg gibt.
+     *
+     * @param  Collection<int,Obtainability>|null  $sources
+     */
+    private function nurBankWege(?Collection $sources): bool
+    {
+        if ($sources === null) {
+            return false;
+        }
+
+        $mitSpiel = $sources->filter(fn (Obtainability $o) => $o->game !== null)->values();
+
+        return $mitSpiel->isNotEmpty()
+            && $mitSpiel->contains(fn (Obtainability $o) => (bool) $o->game->bank_only)
+            && ! $mitSpiel->contains(fn (Obtainability $o) => $o->game->home_compatible && ! $o->game->bank_only);
     }
 
     /**
