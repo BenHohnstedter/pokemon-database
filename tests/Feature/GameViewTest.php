@@ -375,6 +375,35 @@ it('zeigt auch, was sich hier aus einer Vorstufe entwickeln lässt', function ()
     expect($stufe2->fresh()->obtainable_directly)->toBeFalse();
 });
 
+it('zeigt keine Entwicklung einer Art, die es in der Generation des Spiels noch nicht gibt', function () {
+    $spiel = GameFactory::new()->create(['name_de' => 'X', 'generation' => 6]);
+
+    $basis = Pokemon::factory()->withBaseForm()->create([
+        'name_de' => 'Girafarig',
+        'generation' => 2,
+    ]);
+    $evo = Pokemon::factory()->withBaseForm()->create([
+        'name_de' => 'Farigiraf',
+        'generation' => 9,
+        'obtainable_directly' => false,
+        'source_pokemon_id' => $basis->id,
+        'evolution_chain_id' => $basis->evolution_chain_id,
+    ]);
+
+    Obtainability::factory()->create([
+        'pokemon_id' => $basis->id,
+        'game_id' => $spiel->id,
+        'method' => ObtainMethod::Wild->value,
+        'location_detail' => 'Route 5',
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('games.show', $spiel))
+        ->assertOk()
+        ->assertSee('Girafarig')
+        ->assertDontSee('Farigiraf');
+});
+
 it('führt eine Art nicht doppelt, wenn sie hier auch selbst vorkommt', function () {
     $spiel = GameFactory::new()->create(['name_de' => 'Schwert', 'generation' => 8]);
 

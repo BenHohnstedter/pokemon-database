@@ -211,6 +211,34 @@ it('zeigt die Detailseite mit Bezugsquellen und Entwicklungslinie', function () 
         ->assertSee('Bisaknosp');
 });
 
+it('verlinkt strukturierte Fundorte ins PokéWiki', function () {
+    $basis = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Bisasam', 'dex_nr' => 1]);
+    $spiel = GameFactory::new()->modern()->create(['name_de' => 'Pokémon Karmesin']);
+
+    Obtainability::factory()->create([
+        'pokemon_id' => $basis->id,
+        'game_id' => $spiel->id,
+        'location_detail' => 'Route 1, Naturzone u.a.',
+        'locations' => [
+            'truncated' => true,
+            'areas' => [
+                ['slug' => 'route-1', 'name_de' => 'Route 1'],
+                ['slug' => 'naturzone', 'name_de' => 'Naturzone'],
+            ],
+        ],
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('pokedex.show', $basis))
+        ->assertOk()
+        // Link mit deutschem Ortsnamen im PokéWiki
+        ->assertSee('www.pokewiki.de', escape: false)
+        ->assertSee('Route_1', escape: false)
+        ->assertSee('Naturzone', escape: false)
+        // Kürzung wird weiter angezeigt
+        ->assertSee('u.a.');
+});
+
 it('zeigt die Mehrfach-Fang-Empfehlung auf der Detailseite', function () {
     $basis = Pokemon::factory()->withBaseForm()->create(['name_de' => 'Bisasam']);
     $mitte = Pokemon::factory()->withBaseForm()->evolutionOnly($basis)->create(['name_de' => 'Bisaknosp']);

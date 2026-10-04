@@ -171,6 +171,11 @@ class GameController extends Controller
      * Igelavar. Es genuegt also, diese eine Spalte gegen die Arten des Spiels
      * zu halten.
      *
+     * Dazu der Generationsdeckel: Eine Art kann in einem Titel nicht
+     * vorkommen, der vor ihrer Einführung erschienen ist. Sonst zeigt etwa
+     * X/Y eine Gen-9-Entwicklung an, nur weil deren Vorstufe hier fangbar ist
+     * (Girafarig -> Farigiraf, Felino -> Suelord, Dummisel -> Dummimisel).
+     *
      * @param  Collection<int,Collection<int,object>>  $bewertet  je Art die bewerteten Formen
      * @param  Collection<int,int>  $direkteArten  Arten mit eigener Bezugsquelle hier
      * @return Collection<int,object>
@@ -184,10 +189,11 @@ class GameController extends Controller
             ->flatMap(function (Collection $formen) use ($game, $vorhanden) {
                 return $formen
                     ->filter(fn (object $row) => $row->form->form_type === FormType::Base)
-                    ->filter(function (object $row) use ($vorhanden) {
+                    ->filter(function (object $row) use ($game, $vorhanden) {
                         $pokemon = $row->form->pokemon;
 
                         return ! $pokemon->obtainable_directly
+                            && $pokemon->generation <= $game->generation
                             && $pokemon->source_pokemon_id !== null
                             && $pokemon->source_pokemon_id !== $pokemon->id
                             && $vorhanden->has($pokemon->source_pokemon_id);

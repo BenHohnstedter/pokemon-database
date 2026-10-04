@@ -22,9 +22,10 @@ class ImportEncountersCommand extends Command
     protected $signature = 'pokedex:import-encounters
         {--from=1 : Erste National-Dex-Nummer}
         {--to= : Letzte National-Dex-Nummer}
-        {--translate-locations : Deutsche Ortsnamen mitladen (deutlich mehr Requests)}';
+        {--translate-locations : Veraltet – deutsche Ortsnamen sind jetzt Standard}
+        {--no-translate : Schneller Lauf ohne deutsche Ortsnamen (nur für Notfälle)}';
 
-    protected $description = 'Importiert Wildfang-Fundorte je Spiel aus der PokéAPI';
+    protected $description = 'Importiert Wildfang-Fundorte je Spiel aus der PokéAPI (deutsche Ortsnamen, verlinkbar)';
 
     /**
      * PokéAPI-Versionsnamen, die auf keinen eigenen Datensatz zeigen.
@@ -132,11 +133,15 @@ class ImportEncountersCommand extends Command
         }
 
         foreach ($bestPerGame as $gameId => $data) {
-            $areas = array_slice(array_keys($data['areas']), 0, 4);
-            $labels = array_map(fn (string $slug) => $this->locationName($api, $slug), $areas);
-            $detail = implode(', ', $labels);
+            $gebiete = array_slice(array_keys($data['areas']), 0, 4);
+            $orte = array_map(
+                fn (string $slug) => ['slug' => $slug, 'name_de' => $this->locationName($api, $slug)],
+                $gebiete,
+            );
+            $detail = implode(', ', array_column($orte, 'name_de'));
+            $gekuerzt = count($data['areas']) > count($gebiete);
 
-            if (count($data['areas']) > count($areas)) {
+            if ($gekuerzt) {
                 $detail .= ' u.a.';
             }
 
@@ -151,6 +156,11 @@ class ImportEncountersCommand extends Command
                     // Regionalformen hängen an eigenen kuratierten Einträgen.
                     'pokemon_form_id' => null,
                     'location_detail' => $detail,
+                    // Die einzelnen Gebiete mit Slug und deutschem Namen – daraus
+                    // baut die Anzeige je Ort einen PokéWiki-Link. Reiner Anzeigetext
+                    // bleibt location_detail, damit CSV- und kuratierte Zeilen ohne
+                    // dieses Feld unverändert funktionieren.
+                    'locations' => ['truncated' => $gekuerzt, 'areas' => $orte],
                     'event_expired' => false,
                     'source' => 'pokeapi',
                 ],
@@ -170,7 +180,7 @@ class ImportEncountersCommand extends Command
 
         $label = $this->humanize($slug);
 
-        if ($this->option('translate-locations')) {
+        if (! $this->option('no-translate')) {
             try {
                 $area = $api->get("location-area/{$slug}");
                 $german = PokeApiClient::localizedName($area['names'] ?? [], 'de');
@@ -185,6 +195,7 @@ class ImportEncountersCommand extends Command
                 }
             } catch (Throwable) {
                 // Ortsname ist Beiwerk – der Fundort bleibt auch englisch nützlich.
+                // Ohne Netz (und ohne Cache) läuft der Import so trotzdem durch.
             }
         }
 
