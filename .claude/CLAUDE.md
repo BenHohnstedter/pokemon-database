@@ -3,6 +3,15 @@
 Kurz-Briefing für Claude Code. Die vollständige Spezifikation steht in `.claude/spec.md` — dort
 nachlesen, bevor an einem größeren Feature gearbeitet wird.
 
+## Branch-Workflow (verbindlich)
+
+- **Vorrangig wird im Branch `develop` gearbeitet.** Vor der ersten Änderung prüfen und sicherstellen,
+  dass tatsächlich auf `develop` gearbeitet wird: `git rev-parse --abbrev-ref HEAD` muss `develop`
+  ergeben, sonst `git switch develop`.
+- `main` ist der Live-Branch des Home-Servers und wird nicht direkt bearbeitet.
+- Abgeschlossene, getestete Arbeit wird von `develop` nach `main` gemerged; Feature-Branches werden
+  danach gelöscht.
+
 ## Projekt in einem Satz
 Web-App, die trackt, welche Pokémon der Nutzer in Pokémon HOME schon besitzt und wie/wo er die
 fehlenden noch bekommt — mit Priorisierung wegen der Pokémon-Bank-Abschaltung am 26./27.02.2027.
